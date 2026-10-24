@@ -2,6 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "functions": {
-    "api/talk.py": { "maxDuration": 60 }
+    "api/talk.py": { "maxDuration": 60 },
+    "api/clone.py": { "maxDuration": 60 }
   }
 }

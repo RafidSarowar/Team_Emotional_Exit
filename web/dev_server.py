@@ -1,7 +1,7 @@
 """Run the web app locally: python web/dev_server.py  ->  http://localhost:8000
 
-Serves web/public and routes /api/talk and /api/people to the same code Vercel runs.
-Reads API keys from the repo's .env file.
+Serves web/public and routes /api/talk, /api/people and /api/clone to the same code
+Vercel runs. Reads API keys from the repo's .env file.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ import sys
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlparse
 
 WEB = Path(__file__).resolve().parent
 ROOT = WEB.parent
@@ -30,6 +31,7 @@ def load_dotenv(path: Path) -> None:
 
 load_dotenv(ROOT / ".env")
 sys.path.insert(0, str(WEB / "api"))
+import clone  # noqa: E402
 import people  # noqa: E402
 import talk  # noqa: E402
 
@@ -42,10 +44,13 @@ class DevHandler(SimpleHTTPRequestHandler):
             super().do_GET()
 
     def do_POST(self):
-        if self.path != "/api/talk":
+        path = urlparse(self.path).path
+        if path == "/api/talk":
+            talk.handler.do_POST(self)
+        elif path == "/api/clone":
+            clone.handler.do_POST(self)
+        else:
             self.send_error(404)
-            return
-        talk.handler.do_POST(self)
 
 
 if __name__ == "__main__":

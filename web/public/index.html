@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
+    color-scheme: dark;                     /* native controls (audio player, checkbox) match */
     --bg: #0c1a24;
     --text: #f3ece2;
     --muted: #a7b5bc;
@@ -73,12 +74,13 @@
   button.contact:hover { background: var(--surface-2); }
   .avatar {
     flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
-    font-family: Caveat, cursive; font-weight: 600; font-size: 1.7rem; color: var(--ink);
+    font-weight: 500; font-size: 1.15rem; color: var(--ink);
     background: radial-gradient(circle at 35% 30%, #ffe2c2, var(--warm) 55%, var(--warm-2));
   }
-  .avatar.big { width: 76px; height: 76px; font-size: 2.6rem; margin: 10px auto 0; box-shadow: 0 0 36px rgba(242, 184, 128, 0.3); }
+  .avatar.big { width: 76px; height: 76px; margin: 10px auto 0; box-shadow: 0 0 36px rgba(242, 184, 128, 0.3); }
   .who { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   .who small { color: var(--muted); font-size: 0.85rem; }
+  .who .tag { color: var(--warm); }
   .phone { flex: none; width: 22px; height: 22px; color: var(--warm); }
   button.remove { background: none; color: var(--muted); padding: 8px; font-size: 0.8rem; font-weight: 400; }
 
@@ -95,6 +97,36 @@
   form.person details label { margin-top: 8px; }
   ::placeholder { color: var(--muted); opacity: 0.75; }
   .row { display: flex; gap: 10px; justify-content: flex-end; padding-bottom: 12px; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  /* voice: pick a stock voice, or copy their real one */
+  fieldset.voice { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  fieldset.voice legend { padding: 0; margin-bottom: 6px; color: var(--muted); font-size: 0.9rem; }
+  .seg { display: flex; padding: 4px; gap: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+  form.person .seg label {
+    flex: 1; flex-direction: row; justify-content: center; padding: 9px 10px; border-radius: 999px;
+    color: var(--muted); font-size: 0.9rem; cursor: pointer; text-align: center;
+  }
+  .seg input:checked + label { background: linear-gradient(135deg, var(--warm), var(--warm-2)); color: var(--ink); font-weight: 500; }
+  .seg input:focus-visible + label { outline: 2px solid var(--warm); outline-offset: 2px; }
+  .help { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.5; }
+  .script { background: var(--surface); border-left: 3px solid var(--warm); border-radius: 10px; padding: 10px 14px; }
+  .script summary { cursor: pointer; color: var(--text); font-size: 0.9rem; }
+  .script p { margin: 8px 0 2px; color: var(--text); font-size: 0.95rem; line-height: 1.55; }
+  .rec-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .rec-row .pill { flex: 1 1 140px; flex-direction: row; gap: 8px; color: var(--text); font-size: 0.95rem; cursor: pointer; }
+  .rec-row .upload:focus-within { outline: 2px solid var(--warm); outline-offset: 2px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); flex: none; }
+  #recBtn.recording .dot { animation: blink 1s ease-in-out infinite; }
+  #recBtn.recording { border-color: var(--danger); }
+  @keyframes blink { 50% { opacity: 0.25; } }
+  #clipPreview { width: 100%; height: 40px; }
+  form.person label.check { flex-direction: row; align-items: flex-start; gap: 10px; color: var(--text); font-size: 0.92rem; line-height: 1.4; cursor: pointer; }
+  form.person label.check input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--warm); }
+  .hint.error { color: var(--danger); }
 
   /* call header */
   .call-name { font-size: clamp(2.2rem, 9vw, 3rem); line-height: 1.1; margin-bottom: 4px; }
@@ -116,10 +148,6 @@
     transition: transform 0.4s ease, box-shadow 0.4s ease;
   }
   #call.cam-on .orb { width: clamp(84px, 12vh, 116px); }
-  .orb .initial {
-    font-family: Caveat, cursive; font-weight: 600; line-height: 1;
-    font-size: clamp(3rem, 7vh, 4.2rem); color: rgba(42, 26, 16, 0.78);
-  }
   .orb.speaking { animation: breathe 1.6s ease-in-out infinite; }
   .orb.thinking { animation: pulse 1.2s ease-in-out infinite; }
   .orb.listening { box-shadow: 0 0 0 8px rgba(111, 224, 160, 0.22), 0 0 60px rgba(242, 184, 128, 0.4); }
@@ -173,14 +201,14 @@
   button:active, a.button:active { transform: scale(0.97); }
   button:disabled { opacity: 0.6; cursor: default; }
   button.secondary { background: transparent; color: var(--muted); padding: 6px 12px; font-size: 0.9rem; font-weight: 400; }
-  button.pill {
+  .pill {
     display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     min-width: 76px; min-height: 52px; padding: 8px 16px; font-size: 0.9rem; font-weight: 500;
-    background: var(--surface); border: 1px solid var(--line); color: var(--text);
+    background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 999px;
   }
-  button.pill:hover { background: var(--surface-2); }
-  button.pill.end { color: var(--danger); }
-  button.pill svg { width: 20px; height: 20px; }
+  .pill:hover { background: var(--surface-2); }
+  .pill.end { color: var(--danger); }
+  .pill svg { width: 20px; height: 20px; }
 
   /* call controls: [Type] [mic] [End call] */
   .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 8px; }
@@ -259,18 +287,52 @@
         <textarea name="details" maxlength="500" rows="4"
           placeholder="Soft-spoken, always asks if I've eaten, says everything happens for a reason…"></textarea>
       </label>
-      <label>Voice
-        <select name="voice" id="voiceSelect"></select>
-      </label>
-      <details>
-        <summary>Have a cloned voice?</summary>
-        <label>Cartesia voice ID (used instead of the voice above)
-          <input name="voice_id" pattern="[0-9a-fA-F\-]{36}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
-        </label>
-      </details>
+      <fieldset class="voice">
+        <legend>Voice</legend>
+        <div class="seg">
+          <input type="radio" name="voiceMode" id="modeStock" value="stock" class="sr-only" checked>
+          <label for="modeStock">Choose a voice</label>
+          <input type="radio" name="voiceMode" id="modeReal" value="real" class="sr-only">
+          <label for="modeReal">Use their real voice</label>
+        </div>
+
+        <div id="stockVoice">
+          <label class="sr-only" for="voiceSelect">Voice</label>
+          <select name="voice" id="voiceSelect"></select>
+          <details>
+            <summary>Have a Cartesia voice ID?</summary>
+            <label>Voice ID (used instead of the voice above)
+              <input name="voice_id" pattern="[0-9a-fA-F\-]{36}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
+            </label>
+          </details>
+        </div>
+
+        <div id="realVoice" class="hidden">
+          <p class="help">Record them talking for 20 to 60 seconds, or upload a voice memo they send you.
+            Just them, in a quiet room, talking the way they talk to you.</p>
+          <details class="script" open>
+            <summary>Not sure what they should say? They can read this.</summary>
+            <p id="scriptText"></p>
+          </details>
+          <div class="rec-row">
+            <button type="button" id="recBtn" class="pill"><span class="dot" aria-hidden="true"></span><span id="recLabel">Record</span></button>
+            <label class="pill upload">Upload a memo
+              <input type="file" id="clipFile" accept="audio/*" class="sr-only">
+            </label>
+          </div>
+          <p id="recInfo" class="hint" aria-live="polite"></p>
+          <audio id="clipPreview" controls class="hidden"></audio>
+          <label class="check">
+            <input type="checkbox" id="consent">
+            <span><span id="consentName">They</span> said it's okay to copy this voice for HearU.</span>
+          </label>
+          <p class="help">The recording goes to Cartesia to make the voice. HearU doesn't keep it.</p>
+        </div>
+      </fieldset>
+      <p id="addStatus" class="hint" aria-live="polite"></p>
       <div class="row">
         <button type="button" id="cancelAdd" class="secondary">Cancel</button>
-        <button type="submit">Save</button>
+        <button type="submit" id="saveBtn">Save</button>
       </div>
     </form>
   </section>
@@ -283,7 +345,7 @@
       <p id="callState" class="call-state"></p>
     </header>
     <div class="orb-wrap">
-      <div id="orb" class="orb"><span id="orbInitial" class="initial" aria-hidden="true"></span></div>
+      <div id="orb" class="orb"></div>
       <div id="selfWrap" class="self-wrap size-m hidden" role="button" tabindex="0"
            title="Tap to change the size" aria-label="Your camera. Tap to change the size.">
         <video id="selfView" class="self-view" autoplay muted playsinline></video>
@@ -317,7 +379,7 @@
     <h2>Call ended</h2>
     <p id="endedInfo" class="tagline"></p>
     <span class="clock"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2ZM12 20a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7Z"/></svg><span class="local-time"></span></span>
-    <div id="endedAvatar" class="avatar big" aria-hidden="true"></div>
+    <div class="avatar big" aria-hidden="true"></div>
     <p id="lastLabel" class="label"></p>
     <p id="lastLine" class="last-line"></p>
     <p class="label">A little message for when they're up</p>
@@ -401,6 +463,12 @@ function contactItem(p, onCall, onRemove) {
   name.textContent = p.name;
   const rel = document.createElement("small");
   rel.textContent = p.relationship || "";
+  if (p.cloned) {
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = p.relationship ? " · their real voice" : "their real voice";
+    rel.append(tag);
+  }
   who.append(name, rel);
   btn.append(avatar, who);
   btn.insertAdjacentHTML("beforeend", PHONE_ICON);
@@ -445,11 +513,153 @@ async function loadPeople() {
   for (const v of voices) select.append(new Option(v.label, v.id));
 }
 
-$("addBtn").addEventListener("click", () => { show("add"); addForm.elements.name.focus(); });
-$("cancelAdd").addEventListener("click", () => { addForm.reset(); show("contacts"); });
+// -- add someone, optionally with their real voice --------------------------------
 
-addForm.addEventListener("submit", (e) => {
+const MIN_CLIP = 8, MAX_CLIP = 60;   // seconds; Sonic 3.6 learns from up to 60 s of them talking
+let clip = null;                     // their recording or voice memo, as a Blob
+let recorder = null, recStart = 0, recTick = null, saving = false;
+
+const voiceMode = () => addForm.elements.voiceMode.value;
+
+function setAddStatus(text, isError) {
+  $("addStatus").textContent = text || "";
+  $("addStatus").classList.toggle("error", !!isError);
+}
+
+// The script and the consent line use their name and what they call you, as you type.
+function updateVoiceCopy() {
+  const f = addForm.elements;
+  const nick = f.calls_you.value.trim();
+  $("scriptText").textContent =
+    `Hey${nick ? " " + nick : ""}, it's me. I'm here. What's going on? It's okay, just breathe for a second. ` +
+    "You don't have to figure everything out tonight. Did you eat anything today? And drink some water, " +
+    "please, I mean it. Whatever happened, we'll deal with it tomorrow, together. So tell me, how are you " +
+    "really feeling? I'm proud of you, you know that? Now get some rest, okay? I love you.";
+  $("consentName").textContent = f.name.value.trim() || "They";
+}
+addForm.addEventListener("input", updateVoiceCopy);
+
+for (const radio of addForm.elements.voiceMode) {
+  radio.addEventListener("change", () => {
+    $("stockVoice").classList.toggle("hidden", voiceMode() !== "stock");
+    $("realVoice").classList.toggle("hidden", voiceMode() !== "real");
+    setAddStatus("");
+  });
+}
+
+function setClip(blob, info) {
+  clip = blob;
+  const preview = $("clipPreview");
+  if (preview.src) URL.revokeObjectURL(preview.src);
+  preview.src = URL.createObjectURL(blob);
+  preview.classList.remove("hidden");
+  $("recInfo").textContent = info;
+  setAddStatus("");
+}
+
+async function startRecording() {
+  let stream;
+  try {
+    // Unprocessed audio keeps their voice sounding like them.
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false } });
+  } catch {
+    setAddStatus("Microphone access was blocked. You can upload a voice memo instead.", true);
+    return;
+  }
+  const chunks = [];
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    stream.getTracks().forEach((t) => t.stop());
+    clearInterval(recTick);
+    const secs = (Date.now() - recStart) / 1000;
+    const type = recorder.mimeType;
+    recorder = null;
+    $("recBtn").classList.remove("recording");
+    $("recLabel").textContent = "Record again";
+    const short = secs < 10 ? ". That's short; 20 to 60 seconds works best." : "";
+    setClip(new Blob(chunks, { type }), `${fmt(secs)} recorded${short}`);
+  };
+  recorder.start();
+  recStart = Date.now();
+  $("recBtn").classList.add("recording");
+  $("recLabel").textContent = "Stop";
+  recTick = setInterval(() => {
+    const secs = (Date.now() - recStart) / 1000;
+    $("recInfo").textContent = `Recording… ${fmt(secs)} of up to ${fmt(MAX_CLIP)}`;
+    if (secs >= MAX_CLIP && recorder) recorder.stop();
+  }, 250);
+}
+
+function cancelRecording() {
+  if (!recorder) return;
+  recorder.onstop = null;
+  recorder.stop();
+  recorder.stream.getTracks().forEach((t) => t.stop());
+  recorder = null;
+  clearInterval(recTick);
+}
+
+if (!window.MediaRecorder || !navigator.mediaDevices?.getUserMedia) $("recBtn").classList.add("hidden");
+$("recBtn").addEventListener("click", () => (recorder ? recorder.stop() : startRecording()));
+
+$("clipFile").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";  // so picking the same file again still counts
+  if (!file) return;
+  if (file.size > 25_000_000) return setAddStatus("That file is too big. A voice memo under a minute is plenty.", true);
+  setClip(file, file.name);
+});
+
+// Decode any recording or voice memo (webm, m4a, mp3, wav…) and re-encode up to a minute of it
+// as 24 kHz mono WAV: a format Cartesia always accepts, small enough for Vercel's 4.5 MB limit.
+async function toWav(blob) {
+  const RATE = 24000;
+  let decoded;
+  try {
+    decoded = await new OfflineAudioContext(1, 1, RATE).decodeAudioData(await blob.arrayBuffer());
+  } catch {
+    throw new Error("Couldn't read that recording. Record again, or upload an mp3, m4a or wav.");
+  }
+  const seconds = Math.min(decoded.duration, MAX_CLIP);
+  const ctx = new OfflineAudioContext(1, Math.max(1, Math.round(seconds * RATE)), RATE);
+  const source = ctx.createBufferSource();
+  source.buffer = decoded;
+  source.connect(ctx.destination);   // mixes stereo down to mono
+  source.start();
+  const pcm = (await ctx.startRendering()).getChannelData(0);
+  return { wav: encodeWav(pcm, RATE), seconds };
+}
+
+function setSaving(on) {
+  saving = on;
+  for (const id of ["saveBtn", "cancelAdd", "recBtn"]) $(id).disabled = on;
+  $("saveBtn").textContent = on ? "Saving…" : "Save";
+  setAddStatus(on ? "Copying their voice… this takes a few seconds." : "");
+}
+
+function resetAddForm() {
+  cancelRecording();
+  addForm.reset();
+  clip = null;
+  const preview = $("clipPreview");
+  if (preview.src) URL.revokeObjectURL(preview.src);
+  preview.removeAttribute("src");
+  preview.classList.add("hidden");
+  $("recInfo").textContent = "";
+  $("recLabel").textContent = "Record";
+  $("stockVoice").classList.remove("hidden");
+  $("realVoice").classList.add("hidden");
+  setAddStatus("");
+  updateVoiceCopy();
+}
+
+$("addBtn").addEventListener("click", () => { resetAddForm(); show("add"); addForm.elements.name.focus(); });
+$("cancelAdd").addEventListener("click", () => { resetAddForm(); show("contacts"); });
+
+addForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (saving) return;
   const f = new FormData(addForm);
   const get = (k) => String(f.get(k) || "").trim();
   const person = {
@@ -460,9 +670,33 @@ addForm.addEventListener("submit", (e) => {
     details: get("details"),
     voice: get("voice_id") || get("voice"),
   };
-  if (!person.name || !person.voice) return;
+  if (!person.name) return;
+
+  if (voiceMode() === "real") {
+    if (recorder) return setAddStatus("Stop the recording first.", true);
+    if (!clip) return setAddStatus("Record them or upload a voice memo first.", true);
+    if (!$("consent").checked) return setAddStatus(`Check the box once ${person.name} has said yes.`, true);
+    setSaving(true);
+    try {
+      const { wav, seconds } = await toWav(clip);
+      if (seconds < MIN_CLIP) throw new Error(`That's only ${Math.round(seconds)} seconds. Record at least 10.`);
+      const data = await request(`/api/clone?name=${encodeURIComponent(person.name)}&consent=yes`, (passcode) => ({
+        method: "POST",
+        headers: { "Content-Type": "audio/wav", "X-Demo-Passcode": passcode },
+        body: wav,
+      }));
+      person.voice = data.voice;
+      person.cloned = true;
+    } catch (err) {
+      setSaving(false);
+      return setAddStatus(err.message, true);
+    }
+    setSaving(false);
+  }
+
+  if (!person.voice) return;
   saveCustom([...loadCustom(), person]);
-  addForm.reset();
+  resetAddForm();
   renderContacts();
   show("contacts");
 });
@@ -500,33 +734,51 @@ function setBusy(b) {
   typeForm.querySelector("button").disabled = b;
 }
 
-async function callApi(body) {
-  const res = await fetch("/api/talk", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...body, passcode: getPasscode() }),
-  });
+// Calls the server. If the site has a demo passcode, asks for it once and retries.
+async function request(url, options) {
+  let res;
+  try {
+    res = await fetch(url, options(getPasscode()));
+  } catch {
+    throw new Error("Couldn't reach HearU. Check your connection and try again.");
+  }
   if (res.status === 401) {
     const code = prompt("Enter the demo passcode:");
-    if (!code) throw new Error("A passcode is needed to talk.");
+    if (!code) throw new Error("A passcode is needed.");
     setPasscode(code.trim());
-    return callApi(body);
+    return request(url, options);
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Something went wrong (${res.status}).`);
   return data;
 }
 
-// 0.05s of silence as a WAV, played on the first tap so iOS allows audio later.
-function silentWavUrl() {
-  const rate = 8000, samples = 400, buf = new ArrayBuffer(44 + samples);
+function callApi(body) {
+  return request("/api/talk", (passcode) => ({
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...body, passcode }),
+  }));
+}
+
+// A 16-bit mono PCM WAV from samples in [-1, 1].
+function encodeWav(samples, rate) {
+  const buf = new ArrayBuffer(44 + samples.length * 2);
   const v = new DataView(buf), w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
-  w(0, "RIFF"); v.setUint32(4, 36 + samples, true); w(8, "WAVEfmt ");
-  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-  v.setUint32(24, rate, true); v.setUint32(28, rate, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
-  w(36, "data"); v.setUint32(40, samples, true);
-  for (let i = 0; i < samples; i++) v.setUint8(44 + i, 128);
-  return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+  w(0, "RIFF"); v.setUint32(4, 36 + samples.length * 2, true); w(8, "WAVE");
+  w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, "data"); v.setUint32(40, samples.length * 2, true);
+  for (let i = 0; i < samples.length; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return new Blob([buf], { type: "audio/wav" });
+}
+
+// 0.05 s of silence, played on the first tap so iOS allows audio later.
+function silentWavUrl() {
+  return URL.createObjectURL(encodeWav(new Float32Array(400), 8000));
 }
 
 let finishPlayback = null;  // resolves the current playAudio() early, e.g. on End call
@@ -676,7 +928,6 @@ async function startCall(name, body) {
   lastReply = "";
   chat.textContent = "";
   $("callName").textContent = name;
-  $("orbInitial").textContent = initial(name);
   $("timer").classList.add("hidden");
   $("callState").textContent = "Calling…";
   $("endLabel").textContent = "Cancel call";
@@ -728,7 +979,6 @@ function endCall() {
   setState("", "", "");
 
   $("endedInfo").textContent = secs ? `${fmt(secs)} together` : "";
-  $("endedAvatar").textContent = initial(name);
   $("lastLabel").textContent = `${name}'s last words`;
   $("lastLine").textContent = lastReply;
   $("lastLabel").classList.toggle("hidden", !lastReply);
