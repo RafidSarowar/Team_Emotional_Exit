@@ -2,14 +2,15 @@
 
 Only clone a voice with that person's clear permission.
 
-Recording tips: 10-30 seconds of her talking naturally, one speaker, a quiet room,
+Recording tips: 10-30 seconds of them talking naturally, one speaker, a quiet room,
 no music. A phone voice memo is fine (.wav, .mp3, .m4a, .webm).
 
-    python tools/clone_voice.py mom.m4a --name "Mom" --save
-        --save writes CARTESIA_VOICE_ID=<id> into .env
+    python tools/clone_voice.py mom.m4a --name "Mom"
 
-You can also clone in the browser at https://play.cartesia.ai (Voices -> Clone)
-and paste the id into .env yourself.
+Then use the printed id as that person's "voice" in web/api/_people.py, or paste it
+into "Have a cloned voice?" when adding someone in the app.
+
+You can also clone in the browser at https://play.cartesia.ai (Voices -> Clone).
 """
 
 from __future__ import annotations
@@ -18,7 +19,6 @@ import argparse
 import json
 import mimetypes
 import os
-import re
 import sys
 import urllib.error
 import urllib.request
@@ -62,7 +62,7 @@ def multipart(fields: dict[str, str], file_field: str, file_path: Path) -> tuple
 def clone(api_key: str, clip: Path, name: str, language: str) -> dict:
     body, content_type = multipart(
         {"name": name, "language": language, "mode": "similarity", "enhance": "true",
-         "description": "Cloned with permission for the Call Mom demo"},
+         "description": "Cloned with permission for the Nearby demo"},
         "clip", clip,
     )
     req = urllib.request.Request(
@@ -81,22 +81,11 @@ def clone(api_key: str, clip: Path, name: str, language: str) -> dict:
         raise SystemExit(f"Cartesia clone failed ({e.code}): {e.read().decode(errors='replace')}")
 
 
-def save_voice_id(env_path: Path, voice_id: str) -> None:
-    text = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
-    line = f"CARTESIA_VOICE_ID={voice_id}"
-    if re.search(r"^CARTESIA_VOICE_ID=.*$", text, flags=re.M):
-        text = re.sub(r"^CARTESIA_VOICE_ID=.*$", line, text, flags=re.M)
-    else:
-        text = text.rstrip("\n") + ("\n" if text else "") + line + "\n"
-    env_path.write_text(text, encoding="utf-8")
-
-
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("clip", type=Path, help="audio recording of the voice to clone")
     p.add_argument("--name", default="Mom")
     p.add_argument("--language", default="en")
-    p.add_argument("--save", action="store_true", help="write CARTESIA_VOICE_ID into .env")
     args = p.parse_args()
 
     load_dotenv(ROOT / ".env")
@@ -111,11 +100,8 @@ def main() -> None:
     if not voice_id:
         raise SystemExit(f"Unexpected response: {voice}")
     print(f"Cloned voice '{voice.get('name', args.name)}': {voice_id}")
-    if args.save:
-        save_voice_id(ROOT / ".env", voice_id)
-        print("Saved CARTESIA_VOICE_ID to .env")
-    else:
-        print("Add it to .env as CARTESIA_VOICE_ID, or re-run with --save")
+    print("Use it as the person's \"voice\" in web/api/_people.py, or paste it into")
+    print('"Have a cloned voice?" when adding someone in the app.')
 
 
 if __name__ == "__main__":

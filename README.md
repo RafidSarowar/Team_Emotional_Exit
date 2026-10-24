@@ -2,42 +2,73 @@
 
 This repo has two parts:
 
-1. **Call Mom (`web/`)**: the live demo. A web page where you talk out loud and a comforting
-   "Mom" answers in her voice. It's for the late nights when you can't reach her.
+1. **Nearby (`web/`)**: the live demo. A web page where you call a loved one (Mom, Dad,
+   Grandma, a big brother, or anyone you add) and they answer out loud in a voice like theirs.
+   It's for the nights when they're far away and you can't reach them. It doesn't replace
+   them: every call ends by pointing you back to the real person.
 2. **Vision backend (everything else)**: a local YOLO + motion pipeline that plays voice clips
    when a camera sees certain situations. Documented further down.
 
-## Call Mom: live voice companion
+## Nearby: live voice companion
 
 ```
  browser mic ──► speech-to-text (built into Chrome/Edge) ──► POST /api/talk
                                                                │
-                                     Claude Opus 5.5 writes Mom's reply (persona in web/api/_persona.py)
+                                     Claude Opus 5.5 writes their reply (people in web/api/_people.py)
                                                                │
-                                     Cartesia sonic-2 speaks it in Mom's voice ──► mp3 played in the page
+                                     Cartesia sonic-2 speaks it in their voice ──► mp3 played in the page
 ```
 
-- No account or install for the person using it: open the link, tap **Call Mom**, tap the mic, talk.
+- No account or install for the person using it: open the link, tap a contact, tap the mic, talk.
+- **Add someone** lets anyone create their own loved one (name, what they call you, how they
+  talk, a voice). It's saved in that browser only.
+- Ending a call offers a **Text the real Mom** button with a message already written, because
+  the goal is to get you back to the real person.
+- **Camera (opt-in):** turn it on during a call, like switching to video. Each time you talk, one
+  small still photo goes to Claude with your words, so they can notice if you look exhausted or
+  have been crying. It's off by default, your self-view shows while it's on, messages that
+  carried a photo say so, and photos are never stored.
 - Typing works too (and is the fallback on browsers without speech recognition, like Firefox).
-- API keys stay on the server. The page only talks to `/api/talk`.
-- The footer says plainly that it's an AI using Mom's voice with her permission, and the
-  persona is told to answer honestly if asked and to point to 988 in a crisis.
+- API keys stay on the server. The page only talks to `/api/talk` and `/api/people`.
+- The footer says plainly that it's an AI companion, and every persona is told to answer
+  honestly if asked whether it's really them, and to point to 988 in a crisis.
 
-### Make it your mom
+### Setup
 
-- **Personality:** edit [web/api/_persona.py](web/api/_persona.py) (what she calls you, her habits, her greeting).
-- **Voice:** `CARTESIA_VOICE_ID`. The default is the stock voice "Rory - Maternal Vibe". To use her real
-  voice (only with her permission), record 10 to 30 seconds of her talking, then run
-  `python tools/clone_voice.py mom.m4a --save`. Cloning needs a paid Cartesia plan, since the free
-  tier returns `402 Feature not available`.
-- **Reply quality vs speed:** `effort` in [web/api/talk.py](web/api/talk.py) is `xhigh` (most thoughtful,
-  a few seconds per reply). Use `medium` or `low` for snappier back-and-forth.
+- **People:** edit [web/api/_people.py](web/api/_people.py) to change the preset contacts (what they
+  call you, their habits, their voice) or the voices offered in "Add someone".
+- **A real voice:** only with that person's permission, record 10 to 30 seconds of them talking and
+  run `python tools/clone_voice.py recording.m4a --name "Mom"`. Put the printed id in their `voice`
+  in `_people.py`, or paste it into "Have a cloned voice?" in the app. Cloning needs Cartesia Pro
+  ($5/month); the free plan returns `402 Feature not available`.
+- **Reply speed:** `effort` in [web/api/talk.py](web/api/talk.py) is `medium`. It was faster than
+  `high`/`xhigh` in testing with no noticeable difference in these short replies.
+
+### Cartesia features used
+
+- **Sonic-2 text-to-speech** (`/tts/bytes`, mp3) for every reply, in each person's own voice.
+- **Voice library:** each preset and each "Add someone" option is a stock voice picked for the
+  role ("Maternal Vibe", "Matriarch", "Big Brother", ...).
+- **Instant voice cloning** ([tools/clone_voice.py](tools/clone_voice.py)) so a loved one can sound
+  like themselves, with their permission.
+- Greeting audio is cached per voice, so only real replies use credits.
+
+### Known limitations
+
+- The reply is spoken after it's fully written, so there's a 4 to 6 second pause before they answer.
+- English only. Voice input needs Chrome or Edge; other browsers can type.
+- Stock voices are stand-ins until you clone the real person's voice.
+- The camera sends a still photo per message, not live video, so they react to how you look
+  when you speak, not to everything in between.
+- People you add live in one browser's storage, not an account.
+- The free Cartesia plan covers about 20,000 spoken characters a month (roughly 100 replies).
+- It's a comfort companion, not a therapist or a crisis service. It points to 988 when needed.
 
 ### Run locally
 
 ```bash
 pip install -r web/requirements.txt     # just the anthropic SDK
-# fill in ANTHROPIC_API_KEY, CARTESIA_API_KEY, CARTESIA_VOICE_ID in .env (see .env.example)
+# fill in ANTHROPIC_API_KEY and CARTESIA_API_KEY in .env (see .env.example)
 python web/dev_server.py                # http://localhost:8000 (use Chrome or Edge)
 ```
 
@@ -45,9 +76,9 @@ python web/dev_server.py                # http://localhost:8000 (use Chrome or E
 
 1. Go to [vercel.com/new](https://vercel.com/new) and import the `Team_Emotional_Exit` GitHub repo.
 2. Set **Root Directory** to `web`. This keeps YOLO/PyTorch out of the deployment.
-3. Add the environment variables `ANTHROPIC_API_KEY`, `CARTESIA_API_KEY`, `CARTESIA_VOICE_ID`,
-   and optionally `DEMO_PASSCODE`. If you set one, visitors are asked for it once, which stops
-   strangers from spending your credits.
+3. Add the environment variables `ANTHROPIC_API_KEY`, `CARTESIA_API_KEY`, and optionally
+   `DEMO_PASSCODE`. If you set one, visitors are asked for it once, which stops strangers from
+   spending your credits.
 4. Click **Deploy**. You get `https://<project>.vercel.app`, served over HTTPS, which browsers require for the mic.
 
 Every push to `main` redeploys automatically.

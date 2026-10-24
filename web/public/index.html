@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Call Mom</title>
-<meta name="description" content="A comforting voice for the nights you can't reach her.">
+<title>Nearby</title>
+<meta name="description" content="A comforting voice from the people you love, for the nights they feel far away.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -17,7 +17,8 @@
     --warm: #f2b880;
     --warm-2: #e8896a;
     --bubble-you: #26304f;
-    --bubble-mom: #2e2a3d;
+    --bubble-them: #2e2a3d;
+    --line: #3a4468;
     --danger: #ff8a80;
   }
   * { box-sizing: border-box; }
@@ -39,16 +40,53 @@
     padding: 24px 16px 16px;
     min-height: 0;
   }
+  .screen { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   header { text-align: center; }
-  h1 {
-    font-family: Fraunces, Georgia, serif;
-    font-weight: 600;
-    font-size: 2rem;
-    margin: 8px 0 4px;
-  }
+  h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 600; margin: 8px 0 4px; }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.6rem; }
   .tagline { color: var(--muted); margin: 0; font-size: 0.95rem; }
 
-  .orb-wrap { display: flex; justify-content: center; padding: 28px 0 16px; }
+  /* contacts */
+  .contacts { list-style: none; padding: 0; margin: 28px 0 12px; display: flex; flex-direction: column; gap: 10px; }
+  .contacts li { display: flex; align-items: center; gap: 4px; }
+  button.contact {
+    flex: 1; display: flex; align-items: center; gap: 14px; text-align: left;
+    background: var(--bubble-them); color: var(--text); border-radius: 18px; padding: 12px 16px; font-weight: 400;
+  }
+  button.contact:hover { background: #38334a; }
+  .avatar {
+    flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+    font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 1.2rem; color: #2a1a10;
+    background: radial-gradient(circle at 35% 30%, #ffe2c2, var(--warm) 55%, var(--warm-2));
+  }
+  .who { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .who small { color: var(--muted); font-size: 0.85rem; }
+  .phone { flex: none; width: 22px; height: 22px; color: var(--warm); }
+  button.remove { background: none; color: var(--muted); padding: 8px; font-size: 0.8rem; font-weight: 400; }
+
+  /* add someone */
+  form.person { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
+  form.person label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 0.9rem; }
+  form.person input, form.person textarea, form.person select {
+    font: inherit; color: var(--text); background: var(--bubble-you);
+    border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
+  }
+  form.person textarea { resize: vertical; }
+  form.person details { color: var(--muted); font-size: 0.9rem; }
+  form.person details label { margin-top: 8px; }
+  .row { display: flex; gap: 10px; justify-content: flex-end; padding-bottom: 12px; }
+
+  /* call */
+  #call { position: relative; }
+  .self-view {
+    position: absolute; top: 4px; right: 0; width: 88px; height: 118px; object-fit: cover;
+    border-radius: 14px; border: 2px solid var(--warm); transform: scaleX(-1); background: #000;
+  }
+  .call-tools { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  button.secondary.on { color: var(--warm); }
+  .msg .note { display: block; margin-top: 4px; font-size: 0.75rem; color: var(--muted); }
+  .orb-wrap { display: flex; justify-content: center; padding: 24px 0 16px; }
   .orb {
     width: 132px; height: 132px; border-radius: 50%;
     background: radial-gradient(circle at 35% 30%, #ffe2c2, var(--warm) 45%, var(--warm-2));
@@ -70,20 +108,21 @@
   }
   .msg { max-width: 85%; padding: 10px 14px; border-radius: 16px; line-height: 1.45; }
   .msg.you { align-self: flex-end; background: var(--bubble-you); border-bottom-right-radius: 4px; }
-  .msg.mom { align-self: flex-start; background: var(--bubble-mom); border-bottom-left-radius: 4px; }
+  .msg.them { align-self: flex-start; background: var(--bubble-them); border-bottom-left-radius: 4px; }
   .msg.interim { opacity: 0.6; font-style: italic; }
   .msg.error { align-self: center; background: none; color: var(--danger); font-size: 0.9rem; }
 
   .controls { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 8px; }
-  button {
-    font: inherit; border: none; cursor: pointer; color: #2a1a10;
+  button, a.button {
+    font: inherit; border: none; cursor: pointer; color: #2a1a10; text-decoration: none; text-align: center;
     background: linear-gradient(135deg, var(--warm), var(--warm-2));
     border-radius: 999px; padding: 14px 28px; font-weight: 500; font-size: 1.05rem;
     transition: transform 0.1s ease, opacity 0.2s ease;
   }
-  button:active { transform: scale(0.97); }
+  button:active, a.button:active { transform: scale(0.97); }
   button:disabled { opacity: 0.4; cursor: default; }
   button.secondary { background: transparent; color: var(--muted); padding: 6px 12px; font-size: 0.9rem; }
+  button.end { background: var(--danger); padding: 10px 22px; font-size: 0.95rem; }
   .mic { width: 76px; height: 76px; padding: 0; display: grid; place-items: center; }
   .mic svg { width: 32px; height: 32px; }
   .mic.on { background: var(--danger); }
@@ -92,9 +131,13 @@
   form.type.show { display: flex; }
   form.type input {
     flex: 1; min-width: 0; font: inherit; color: var(--text);
-    background: var(--bubble-you); border: 1px solid #3a4468; border-radius: 999px; padding: 12px 16px;
+    background: var(--bubble-you); border: 1px solid var(--line); border-radius: 999px; padding: 12px 16px;
   }
   form.type button { padding: 12px 18px; font-size: 1rem; }
+
+  /* call ended */
+  #ended { justify-content: center; align-items: center; text-align: center; gap: 14px; }
+  .last-line { font-family: Fraunces, Georgia, serif; font-size: 1.1rem; line-height: 1.5; max-width: 30em; margin: 8px 0 12px; }
 
   footer {
     width: 100%; max-width: 560px; padding: 8px 16px 18px;
@@ -106,53 +149,213 @@
 </head>
 <body>
 <main>
-  <header>
-    <h1>Call Mom</h1>
-    <p class="tagline">For the nights you can't reach her.</p>
-  </header>
+  <section id="contacts" class="screen">
+    <header>
+      <h1>Nearby</h1>
+      <p class="tagline">For the nights the people you love feel far away.</p>
+    </header>
+    <ul id="contactList" class="contacts"></ul>
+    <p id="contactsError" class="status"></p>
+    <button id="addBtn" class="secondary">+ Add someone</button>
+  </section>
 
-  <div class="orb-wrap"><div id="orb" class="orb"></div></div>
-  <p id="status" class="status"></p>
-
-  <div id="chat" class="chat" aria-live="polite"></div>
-
-  <div class="controls">
-    <button id="start">Call Mom</button>
-    <button id="mic" class="mic hidden" aria-label="Tap to talk">
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
-    </button>
-    <form id="typeForm" class="type">
-      <input id="typeInput" placeholder="Type to Mom…" autocomplete="off" maxlength="1000">
-      <button type="submit">Send</button>
+  <section id="add" class="screen hidden">
+    <header>
+      <h2>Add someone</h2>
+      <p class="tagline">Tell us a little about who you miss.</p>
+    </header>
+    <form id="addForm" class="person">
+      <label>Their name
+        <input name="name" required maxlength="30" placeholder="Nani, Dad, Aunt Rosa…" autocomplete="off">
+      </label>
+      <label>Who they are to you
+        <input name="relationship" maxlength="40" placeholder="my grandmother" autocomplete="off">
+      </label>
+      <label>What they call you
+        <input name="calls_you" maxlength="30" placeholder="sweetheart, kiddo, beta…" autocomplete="off">
+      </label>
+      <label>How they talk
+        <textarea name="details" maxlength="500" rows="4"
+          placeholder="Soft-spoken, always asks if I've eaten, says everything happens for a reason…"></textarea>
+      </label>
+      <label>Voice
+        <select name="voice" id="voiceSelect"></select>
+      </label>
+      <details>
+        <summary>Have a cloned voice?</summary>
+        <label>Cartesia voice ID (used instead of the voice above)
+          <input name="voice_id" pattern="[0-9a-fA-F\-]{36}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
+        </label>
+      </details>
+      <div class="row">
+        <button type="button" id="cancelAdd" class="secondary">Cancel</button>
+        <button type="submit">Save</button>
+      </div>
     </form>
-    <button id="toggleType" class="secondary hidden">Type instead</button>
-  </div>
+  </section>
+
+  <section id="call" class="screen hidden">
+    <video id="selfView" class="self-view hidden" autoplay muted playsinline aria-label="Your camera"></video>
+    <header>
+      <h2 id="callName"></h2>
+      <p id="timer" class="tagline"></p>
+    </header>
+    <div class="orb-wrap"><div id="orb" class="orb"></div></div>
+    <p id="status" class="status"></p>
+    <div id="chat" class="chat" aria-live="polite"></div>
+    <div class="controls">
+      <button id="mic" class="mic" aria-label="Tap to talk">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
+      </button>
+      <form id="typeForm" class="type">
+        <input id="typeInput" placeholder="Type a message…" autocomplete="off" maxlength="1000">
+        <button type="submit">Send</button>
+      </form>
+      <div class="call-tools">
+        <button id="toggleType" class="secondary">Type instead</button>
+        <button id="camBtn" class="secondary" title="When it's on, they see a photo of you each time you talk. Nothing is saved.">Turn on camera</button>
+      </div>
+      <button id="endBtn" class="end">End call</button>
+    </div>
+  </section>
+
+  <section id="ended" class="screen hidden">
+    <h2>Call ended</h2>
+    <p id="endedInfo" class="tagline"></p>
+    <p id="lastLine" class="last-line"></p>
+    <a id="textThem" class="button" href="#">Text them</a>
+    <p class="tagline">They'd love to hear from you.</p>
+    <button id="backBtn" class="secondary">Back to contacts</button>
+  </section>
 </main>
 <footer>
-  An AI companion speaking in Mom's voice, made with her permission. It's here to comfort you,
-  not to replace her. Reach out to her when you can.
+  An AI companion that speaks like the people you love. It's here to comfort you, not to
+  replace them. Reach out to them when you can.
   In crisis? Call or text <a href="tel:988">988</a>.
 </footer>
 
 <script>
 const $ = (id) => document.getElementById(id);
 const orb = $("orb"), statusEl = $("status"), chat = $("chat");
-const startBtn = $("start"), micBtn = $("mic");
+const micBtn = $("mic"), endBtn = $("endBtn");
 const typeForm = $("typeForm"), typeInput = $("typeInput"), toggleType = $("toggleType");
+const addForm = $("addForm");
 
-const history = [];          // [{role, content}] sent to the server
-const player = new Audio();  // one element, unlocked by the first tap (needed on iOS)
-let busy = false;
+const STORE = "nearby.people";     // people added in this browser
+const player = new Audio();        // one element, unlocked by the first tap (needed on iOS)
+
+let presets = [], voices = [];
+let current = null;   // {name, body} of the call in progress
+let history = [];     // [{role, content}] sent to the server
+let callId = 0;       // bumped when a call starts or ends, so stale replies are ignored
+let busy = false, lastReply = "";
+let timerStart = 0, timerHandle = null;
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null, listening = false, interimEl = null;
 
+function show(name) {
+  for (const s of ["contacts", "add", "call", "ended"]) $(s).classList.toggle("hidden", s !== name);
+}
+
+function loadCustom() {
+  try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch { return []; }
+}
+function saveCustom(list) {
+  try { localStorage.setItem(STORE, JSON.stringify(list)); } catch {}
+}
 function getPasscode() {
   try { return localStorage.getItem("passcode") || ""; } catch { return ""; }
 }
 function setPasscode(v) {
   try { localStorage.setItem("passcode", v); } catch {}
 }
+
+// -- contacts -------------------------------------------------------------------
+
+const PHONE_ICON = '<svg class="phone" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1l-2.2 2.2Z"/></svg>';
+
+function contactItem(p, onCall, onRemove) {
+  const li = document.createElement("li");
+  const btn = document.createElement("button");
+  btn.className = "contact";
+  btn.setAttribute("aria-label", `Call ${p.name}`);
+  const avatar = document.createElement("span");
+  avatar.className = "avatar";
+  avatar.textContent = (p.name.trim()[0] || "?").toUpperCase();
+  const who = document.createElement("span");
+  who.className = "who";
+  const name = document.createElement("b");
+  name.textContent = p.name;
+  const rel = document.createElement("small");
+  rel.textContent = p.relationship || "";
+  who.append(name, rel);
+  btn.append(avatar, who);
+  btn.insertAdjacentHTML("beforeend", PHONE_ICON);
+  btn.addEventListener("click", onCall);
+  li.append(btn);
+  if (onRemove) {
+    const rm = document.createElement("button");
+    rm.className = "remove";
+    rm.textContent = "Remove";
+    rm.setAttribute("aria-label", `Remove ${p.name}`);
+    rm.addEventListener("click", onRemove);
+    li.append(rm);
+  }
+  return li;
+}
+
+function renderContacts() {
+  const list = $("contactList");
+  list.textContent = "";
+  for (const p of presets) {
+    list.append(contactItem(p, () => startCall(p.name, { person: p.id })));
+  }
+  for (const p of loadCustom()) {
+    list.append(contactItem(p, () => startCall(p.name, { custom: p }), () => {
+      saveCustom(loadCustom().filter((x) => x.id !== p.id));
+      renderContacts();
+    }));
+  }
+}
+
+async function loadPeople() {
+  try {
+    const res = await fetch("/api/people");
+    if (!res.ok) throw new Error();
+    ({ people: presets, voices } = await res.json());
+  } catch {
+    $("contactsError").textContent = "Couldn't load contacts. Refresh to try again.";
+  }
+  renderContacts();
+  const select = $("voiceSelect");
+  select.textContent = "";
+  for (const v of voices) select.append(new Option(v.label, v.id));
+}
+
+$("addBtn").addEventListener("click", () => { show("add"); addForm.elements.name.focus(); });
+$("cancelAdd").addEventListener("click", () => { addForm.reset(); show("contacts"); });
+
+addForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const f = new FormData(addForm);
+  const get = (k) => String(f.get(k) || "").trim();
+  const person = {
+    id: "c" + Date.now(),
+    name: get("name"),
+    relationship: get("relationship"),
+    calls_you: get("calls_you"),
+    details: get("details"),
+    voice: get("voice_id") || get("voice"),
+  };
+  if (!person.name || !person.voice) return;
+  saveCustom([...loadCustom(), person]);
+  addForm.reset();
+  renderContacts();
+  show("contacts");
+});
+
+// -- talking to the server ---------------------------------------------------------
 
 function setState(state, text) {
   orb.className = "orb " + (state || "");
@@ -203,40 +406,179 @@ function silentWavUrl() {
   return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
 }
 
+let finishPlayback = null;  // resolves the current playAudio() early, e.g. on End call
+
 function playAudio(b64) {
   return new Promise((resolve) => {
     if (!b64) return resolve();
+    finishPlayback = resolve;
     player.src = "data:audio/mpeg;base64," + b64;
     player.onended = player.onerror = () => resolve();
     player.play().catch(() => resolve());
   });
 }
 
-async function momSays(data) {
+function stopAudio() {
+  player.pause();
+  if (finishPlayback) { finishPlayback(); finishPlayback = null; }
+}
+
+async function theySay(data, id) {
   history.push({ role: "assistant", content: data.reply });
-  addMsg("mom", data.reply);
-  setState("speaking", "Mom is speaking…");
+  lastReply = data.reply;
+  addMsg("them", data.reply);
+  setState("speaking", `${current.name} is speaking…`);
   await playAudio(data.audio);
+  if (id !== callId) return;
   setState("", SpeechRecognition ? "Tap the mic to talk" : "Type to talk");
+}
+
+// -- camera (opt-in, like turning on video in a call) ---------------------------
+
+const selfView = $("selfView"), camBtn = $("camBtn");
+let camStream = null;
+
+async function cameraOn() {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 640 } });
+  } catch {
+    addMsg("error", "Camera access was blocked. You can keep talking without it.", "error");
+    return;
+  }
+  selfView.srcObject = camStream;
+  selfView.classList.remove("hidden");
+  camBtn.textContent = "Camera on: they see a photo when you talk";
+  camBtn.classList.add("on");
+}
+
+function cameraOff() {
+  if (camStream) camStream.getTracks().forEach((t) => t.stop());
+  camStream = null;
+  selfView.srcObject = null;
+  selfView.classList.add("hidden");
+  camBtn.textContent = "Turn on camera";
+  camBtn.classList.remove("on");
+}
+
+camBtn.addEventListener("click", () => (camStream ? cameraOff() : cameraOn()));
+
+// One small JPEG of the current frame (base64, no prefix), or null if the camera is off.
+function snapshot() {
+  if (!camStream || !selfView.videoWidth) return null;
+  const w = Math.min(512, selfView.videoWidth);
+  const h = Math.round(selfView.videoHeight * (w / selfView.videoWidth));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext("2d").drawImage(selfView, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
 }
 
 async function send(text) {
   text = text.trim();
-  if (!text || busy) return;
-  addMsg("you", text);
+  if (!text || busy || !current) return;
+  const id = callId;
+  const image = snapshot();
+  const bubble = addMsg("you", text);
+  if (image) {
+    const note = document.createElement("span");
+    note.className = "note";
+    note.textContent = "photo shared";
+    bubble.append(note);
+  }
   history.push({ role: "user", content: text });
   setBusy(true);
-  setState("thinking", "Mom is thinking…");
+  setState("thinking", `${current.name} is thinking…`);
   try {
-    await momSays(await callApi({ history }));
+    const data = await callApi({ ...current.body, history, image });
+    if (id === callId) await theySay(data, id);
   } catch (e) {
+    if (id !== callId) return;
     history.pop();
     addMsg("error", e.message, "error");
     setState("", "");
   } finally {
-    setBusy(false);
+    if (id === callId) setBusy(false);
   }
 }
+
+// -- the call ------------------------------------------------------------------------
+
+function fmt(secs) {
+  secs = Math.floor(secs);
+  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+}
+function startTimer() {
+  timerStart = Date.now();
+  const tick = () => { $("timer").textContent = fmt((Date.now() - timerStart) / 1000); };
+  tick();
+  timerHandle = setInterval(tick, 1000);
+}
+function stopTimer() {
+  clearInterval(timerHandle);
+  const secs = timerStart ? (Date.now() - timerStart) / 1000 : 0;
+  timerStart = 0;
+  return secs;
+}
+
+async function startCall(name, body) {
+  // Unlock audio playback inside the user's tap.
+  player.src = silentWavUrl();
+  player.play().catch(() => {});
+
+  const id = ++callId;
+  current = { name, body };
+  history = [];
+  lastReply = "";
+  chat.textContent = "";
+  $("callName").textContent = name;
+  $("timer").textContent = "Calling…";
+  typeForm.classList.toggle("show", !SpeechRecognition);
+  micBtn.classList.toggle("hidden", !SpeechRecognition);
+  toggleType.classList.toggle("hidden", !SpeechRecognition);
+  toggleType.textContent = "Type instead";
+  camBtn.classList.toggle("hidden", !navigator.mediaDevices?.getUserMedia);
+  if (SpeechRecognition && !recognition) setupRecognition();
+  show("call");
+
+  setBusy(true);
+  setState("thinking", `Calling ${name}…`);
+  try {
+    const data = await callApi({ ...body, greeting: true });
+    if (id !== callId) return;
+    startTimer();
+    await theySay(data, id);
+  } catch (e) {
+    if (id !== callId) return;
+    addMsg("error", e.message, "error");
+    setState("", "");
+  } finally {
+    if (id === callId) setBusy(false);
+  }
+}
+
+function endCall() {
+  if (!current) return;
+  const { name } = current;
+  callId++;
+  current = null;
+  if (listening) recognition.abort();
+  stopAudio();
+  cameraOff();
+  const secs = stopTimer();
+  setBusy(false);
+  setState("", "");
+
+  $("endedInfo").textContent = secs ? `${name} · ${fmt(secs)}` : name;
+  $("lastLine").textContent = lastReply ? `“${lastReply}”` : "";
+  const text = `Hey ${name}, just thinking about you. Call me when you're up?`;
+  $("textThem").href = "sms:?&body=" + encodeURIComponent(text);
+  $("textThem").textContent = `Text the real ${name}`;
+  show("ended");
+}
+
+endBtn.addEventListener("click", endCall);
+$("backBtn").addEventListener("click", () => show("contacts"));
 
 // -- speech recognition ------------------------------------------------------
 
@@ -276,7 +618,7 @@ function setupRecognition() {
     micBtn.classList.remove("on");
     if (interimEl) { interimEl.remove(); interimEl = null; }
     if (finalText.trim()) send(finalText);
-    else if (!busy) setState("", "Tap the mic to talk");
+    else if (!busy && current) setState("", "Tap the mic to talk");
   };
 }
 
@@ -287,38 +629,13 @@ micBtn.addEventListener("click", () => {
   try { recognition.start(); } catch {}
 });
 
-// -- start / typing ---------------------------------------------------------------
-
-startBtn.addEventListener("click", async () => {
-  // Unlock audio playback inside the user's tap.
-  player.src = silentWavUrl();
-  player.play().catch(() => {});
-
-  startBtn.classList.add("hidden");
-  if (SpeechRecognition) {
-    setupRecognition();
-    micBtn.classList.remove("hidden");
-    toggleType.classList.remove("hidden");
-  } else {
-    typeForm.classList.add("show");
-  }
-  setBusy(true);
-  setState("thinking", "Calling Mom…");
-  try {
-    await momSays(await callApi({ greeting: true }));
-  } catch (e) {
-    addMsg("error", e.message, "error");
-    setState("", "");
-  } finally {
-    setBusy(false);
-  }
-});
+// -- typing -------------------------------------------------------------------------
 
 toggleType.addEventListener("click", () => {
-  const show = !typeForm.classList.contains("show");
-  typeForm.classList.toggle("show", show);
-  toggleType.textContent = show ? "Hide keyboard" : "Type instead";
-  if (show) typeInput.focus();
+  const showForm = !typeForm.classList.contains("show");
+  typeForm.classList.toggle("show", showForm);
+  toggleType.textContent = showForm ? "Hide keyboard" : "Type instead";
+  if (showForm) typeInput.focus();
 });
 
 typeForm.addEventListener("submit", (e) => {
@@ -327,6 +644,8 @@ typeForm.addEventListener("submit", (e) => {
   typeInput.value = "";
   send(text);
 });
+
+loadPeople();
 </script>
 </body>
 </html>

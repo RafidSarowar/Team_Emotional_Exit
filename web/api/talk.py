@@ -1,13 +1,18 @@
-"""POST /api/talk: the user's words in, Mom's reply out as text + speech.
+"""POST /api/talk: the user's words in, their loved one's reply out as text + speech.
 
-Request:  {"history": [{"role": "user"|"assistant", "content": "..."}, ...], "passcode": "..."}
-          (the last item must be the new user message)
+Request:  {"person": "mom",                      a preset id from _people.PEOPLE, or
+           "custom": {"name", "relationship",     someone added in the browser
+                      "calls_you", "details", "voice"},
+           "history": [{"role": "user"|"assistant", "content": "..."}, ...],
+           "image": "<base64 jpeg>",              optional camera still for the newest message
+           "greeting": true,                      (instead of history) start the call
+           "passcode": "..."}
+          (the last history item must be the new user message)
 Response: {"reply": "...", "audio": "<base64 mp3>"}
 
 Environment variables:
   ANTHROPIC_API_KEY   Claude API key (required)
   CARTESIA_API_KEY    Cartesia API key (required)
-  CARTESIA_VOICE_ID   the cloned voice id (required)
   DEMO_PASSCODE       optional; if set, requests must include it (stops strangers
                       from spending your API credits)
 """
@@ -17,6 +22,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -25,19 +31,35 @@ from http.server import BaseHTTPRequestHandler
 import anthropic
 
 sys.path.insert(0, os.path.dirname(__file__))
-from _persona import GREETING, SYSTEM_PROMPT  # noqa: E402
+from _people import PEOPLE, BadPerson, custom_person, greeting, system_prompt  # noqa: E402
 
 MODEL = "claude-opus-5-5"
 MAX_TURNS = 20          # history sent to Claude
 MAX_CHARS = 1000        # per message
+MAX_REPLY_CHARS = 600   # spoken replies are short; this caps Cartesia credits per reply
+MAX_IMAGE_B64 = 700_000  # camera stills are ~50 KB; this rejects anything unreasonable
+MAX_BODY = 1_000_000
 CARTESIA_URL = "https://api.cartesia.ai/tts/bytes"
 CARTESIA_VERSION = "2025-04-16"
 
 _client: anthropic.Anthropic | None = None
+_greeting_audio: dict[tuple[str, str], str] = {}  # (voice, text) -> base64 mp3
 
 
 class BadRequest(Exception):
     pass
+
+
+def resolve_person(payload: dict) -> dict:
+    if payload.get("custom") is not None:
+        try:
+            return custom_person(payload["custom"])
+        except BadPerson as e:
+            raise BadRequest(str(e)) from None
+    person = PEOPLE.get(payload.get("person") or "mom")
+    if person is None:
+        raise BadRequest("unknown person")
+    return person
 
 
 def clean_history(raw) -> list[dict]:
@@ -62,33 +84,66 @@ def clean_history(raw) -> list[dict]:
     return turns
 
 
-def ask_mom(history: list[dict]) -> str:
+def clean_image(raw) -> str | None:
+    """Accept an optional camera still: a base64 JPEG. It's sent to Claude, never stored."""
+    if raw in (None, ""):
+        return None
+    if not isinstance(raw, str) or len(raw) > MAX_IMAGE_B64:
+        raise BadRequest("image must be a base64 JPEG under 500 KB")
+    try:
+        data = base64.b64decode(raw, validate=True)
+    except ValueError:
+        raise BadRequest("image must be a base64 JPEG") from None
+    if not data.startswith(b"\xff\xd8\xff"):
+        raise BadRequest("image must be a JPEG")
+    return raw
+
+
+def shorten(text: str) -> str:
+    """Cut an unusually long reply at the last full sentence that fits."""
+    if len(text) <= MAX_REPLY_CHARS:
+        return text
+    cut = text[:MAX_REPLY_CHARS]
+    ends = [m.end() for m in re.finditer(r"[.!?](\s|$)", cut)]
+    return cut[:ends[-1]].strip() if ends else cut.rstrip() + "…"
+
+
+def ask(person: dict, history: list[dict], image: str | None = None) -> str:
     global _client
     _client = _client or anthropic.Anthropic()
+    messages = history
+    if image:
+        # The photo goes with the newest message only, like a glance during a video call.
+        newest = history[-1]["content"]
+        messages = history[:-1] + [{"role": "user", "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image}},
+            {"type": "text", "text": newest},
+        ]}]
     response = _client.beta.messages.create(
         model=MODEL,
         # Thinking counts toward max_tokens, so leave room for it.
         max_tokens=16000,
-        # Medium keeps the pause before Mom answers short. Higher effort was slower
+        # Medium keeps the pause before they answer short. Higher effort was slower
         # and didn't noticeably improve these short, spoken replies.
         output_config={"effort": "medium"},
         # If a safety classifier declines, retry on a fallback model instead of failing.
         betas=["server-side-fallback-2026-07-01"],
         fallbacks="default",
-        system=SYSTEM_PROMPT,
-        messages=history,
+        system=system_prompt(person),
+        messages=messages,
     )
     text = " ".join(b.text for b in response.content if b.type == "text").strip()
     if response.stop_reason == "refusal" or not text:
-        return "I'm right here with you, sweetheart. Tell me a little more?"
-    return text
+        name = f", {person['calls_you']}" if person["calls_you"] else ""
+        return f"I'm right here with you{name}. Tell me a little more?"
+    return shorten(text)
 
 
-def speak(text: str) -> bytes:
+def speak(text: str, voice: str) -> bytes:
     body = {
         "model_id": "sonic-2",
         "transcript": text,
-        "voice": {"mode": "id", "id": os.environ["CARTESIA_VOICE_ID"]},
+        "voice": {"mode": "id", "id": voice},
         "output_format": {"container": "mp3", "sample_rate": 44100, "bit_rate": 128000},
         "language": "en",
     }
@@ -115,13 +170,15 @@ def handle(payload: dict) -> tuple[int, dict]:
         return 401, {"error": "passcode"}
 
     try:
+        person = resolve_person(payload)
         if payload.get("greeting"):
-            reply = GREETING
+            reply = greeting(person)
         else:
             history = clean_history(payload.get("history"))
+            image = clean_image(payload.get("image"))
             if not os.environ.get("ANTHROPIC_API_KEY"):
                 return 500, {"error": "ANTHROPIC_API_KEY is not set on the server."}
-            reply = ask_mom(history)
+            reply = ask(person, history, image)
     except BadRequest as e:
         return 400, {"error": str(e)}
     except anthropic.RateLimitError:
@@ -134,11 +191,27 @@ def handle(payload: dict) -> tuple[int, dict]:
         return 502, {"error": "Couldn't reach the Claude API."}
 
     try:
-        audio = base64.b64encode(speak(reply)).decode()
+        # Greetings repeat on every call, so reuse their audio instead of paying for it again.
+        cache_key = (person["voice"], reply)
+        if payload.get("greeting") and cache_key in _greeting_audio:
+            audio = _greeting_audio[cache_key]
+        else:
+            audio = base64.b64encode(speak(reply, person["voice"])).decode()
+            if payload.get("greeting"):
+                _greeting_audio[cache_key] = audio
     except (urllib.error.URLError, KeyError) as e:
         # Still return the text so the conversation keeps going without audio.
         return 200, {"reply": reply, "audio": None, "warning": f"voice unavailable: {e}"}
     return 200, {"reply": reply, "audio": audio}
+
+
+def send_json(req: BaseHTTPRequestHandler, status: int, body: dict) -> None:
+    data = json.dumps(body).encode()
+    req.send_response(status)
+    req.send_header("Content-Type", "application/json")
+    req.send_header("Content-Length", str(len(data)))
+    req.end_headers()
+    req.wfile.write(data)
 
 
 class handler(BaseHTTPRequestHandler):
@@ -147,7 +220,7 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             length = int(self.headers.get("Content-Length") or 0)
-            payload = json.loads(self.rfile.read(min(length, 200_000)) or b"{}")
+            payload = json.loads(self.rfile.read(min(length, MAX_BODY)) or b"{}")
             if not isinstance(payload, dict):
                 raise ValueError
         except ValueError:
@@ -157,9 +230,4 @@ class handler(BaseHTTPRequestHandler):
                 status, body = handle(payload)
             except Exception as e:  # never drop the connection without an answer
                 status, body = 500, {"error": f"Server error: {type(e).__name__}"}
-        data = json.dumps(body).encode()
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
+        send_json(self, status, body)

@@ -1,6 +1,6 @@
 """Run the web app locally: python web/dev_server.py  ->  http://localhost:8000
 
-Serves web/public and routes POST /api/talk to the same code Vercel runs.
+Serves web/public and routes /api/talk and /api/people to the same code Vercel runs.
 Reads API keys from the repo's .env file.
 """
 
@@ -30,10 +30,17 @@ def load_dotenv(path: Path) -> None:
 
 load_dotenv(ROOT / ".env")
 sys.path.insert(0, str(WEB / "api"))
+import people  # noqa: E402
 import talk  # noqa: E402
 
 
 class DevHandler(SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/api/people":
+            people.handler.do_GET(self)
+        else:
+            super().do_GET()
+
     def do_POST(self):
         if self.path != "/api/talk":
             self.send_error(404)
@@ -42,12 +49,12 @@ class DevHandler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    missing = [k for k in ("ANTHROPIC_API_KEY", "CARTESIA_API_KEY", "CARTESIA_VOICE_ID") if not os.environ.get(k)]
+    missing = [k for k in ("ANTHROPIC_API_KEY", "CARTESIA_API_KEY") if not os.environ.get(k)]
     if missing:
         print(f"Warning: missing in .env: {', '.join(missing)}")
     port = int(os.environ.get("PORT", 8000))
     server = ThreadingHTTPServer(("127.0.0.1", port), partial(DevHandler, directory=str(WEB / "public")))
-    print(f"Call Mom running at http://localhost:{port}  (Ctrl+C to stop)")
+    print(f"Nearby running at http://localhost:{port}  (Ctrl+C to stop)")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
