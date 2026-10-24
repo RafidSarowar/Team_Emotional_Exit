@@ -1,64 +1,107 @@
-# Team Emotional Exit
+# HearU
 
-**Live demo: https://team-emotional-exit-tau.vercel.app** (use Chrome or Edge and allow the microphone)
+**Call the people you miss at 2 AM. HearU answers in their voice, then helps you text the real them.**
+
+**[Try the live demo](https://team-emotional-exit-tau.vercel.app)** · Chrome or Edge, on a phone or a laptop · allow the microphone
+
+<!-- Demo video: add the YouTube link here once it's uploaded. -->
+<!-- Figma: add the file's share link here (shared with "Anyone"). -->
 
 | Call someone you miss | They answer in their voice | Or copy their real voice | Then text the real one |
 | --- | --- | --- | --- |
-| <img src="docs/screenshots/01-contacts.png" width="190" alt="HearU contacts: Mom, Dad, Grandma, Big Bro"> | <img src="docs/screenshots/05-conversation.png" width="190" alt="A call with Mom at 2:15 AM"> | <img src="docs/screenshots/07-real-voice.png" width="190" alt="Recording a loved one's real voice, with consent"> | <img src="docs/screenshots/06-call-ended.png" width="190" alt="Call ended, with a Text your real Mom button"> |
+| <img src="docs/screenshots/01-contacts.png" width="190" alt="HearU contacts: Mom, Dad, Grandma, Big Bro"> | <img src="docs/screenshots/05-conversation.png" width="190" alt="A call with Mom at 2:31 AM"> | <img src="docs/screenshots/07-real-voice.png" width="190" alt="Recording a loved one's real voice, with consent"> | <img src="docs/screenshots/06-call-ended.png" width="190" alt="Call ended, with a Text your real Mom button"> |
 
-This repo has two parts:
+Built at Cal Hacks 13.0. **Claude** writes what they'd say; **Cartesia** says it in their voice.
 
-1. **HearU (`web/`)**: the live demo. A web page where you call a loved one (Mom, Dad,
-   Grandma, a big brother, or anyone you add) and they answer out loud in a voice like theirs.
-   It's for the nights when they're far away and you can't reach them. It doesn't replace
-   them: every call ends by pointing you back to the real person.
-2. **Vision backend (everything else)**: a local YOLO + motion pipeline that plays voice clips
-   when a camera sees certain situations. Documented further down.
+## Who it's for
 
-## HearU: live voice companion
+Students far from home. Half of U.S. college students report high loneliness, and when it hits,
+the people they'd call are often asleep or a world away.
 
-**Who it's for:** students who moved far from home for college, like international students whose
-families are asleep in another time zone. At 2 AM, after a bad exam or a lonely night, the people
-they'd call can't pick up. HearU lets them hear a loved one's voice right then, and then points
-them back to that real person.
+- **52%** of students reported high loneliness in the 2024–2025 Healthy Minds Study, which surveyed
+  about 84,000 students at 135 colleges ([source](https://www.bu.edu/sph/news/articles/2025/college-students-reports-of-depression-anxiety-suicidal-thoughts-continue-move-in-positive-direction)).
+- **1,177,766** international students studied in the U.S. in 2024/25 ([source](https://www.iie.org/news/open-doors-2025-press-release/)).
+  For them, 2 PM after a midterm in Berkeley is 2:30 AM at home in Delhi.
 
+HearU is for that moment: hear the voice of someone who loves you right now, then reach the real
+them when you can. It's built to bring people closer, not to replace them.
+
+## Try it in 60 seconds
+
+1. Open the [live demo](https://team-emotional-exit-tau.vercel.app) in Chrome and allow the microphone.
+2. Tap **Mom**. She answers in a voice our team cloned with Cartesia.
+3. Tap the mic and say something real, like "I bombed my midterm and I can't sleep." Or tap **Type**.
+4. Optional: tap **Turn on camera**, and she can see how you look when you talk.
+5. Ask "Are you really my mom?" and hear the honest answer.
+6. Tap **End call**, then **Text your real Mom**.
+7. Back on the contacts, try **+ Add someone**, then **Use their real voice**.
+
+## What it does
+
+- **Loved ones, ready to call.** Mom, Dad, Grandma and Big Bro, each with their own voice, speaking
+  pace and way of talking.
+- **Add someone.** Their name, what they call you, how they talk, and a voice. Saved in your browser only.
+- **Use their real voice.** Record them for 20 to 60 seconds or upload a voice memo, confirm they
+  said it's okay, and HearU copies their voice with Cartesia.
+- **A real call.** Tap the mic and talk; they answer out loud, with the words on screen, a call
+  timer and your local time. Type instead when you can't talk out loud.
+- **Camera, if you want.** Like switching to video: one still photo goes with each message, so they
+  can notice how you look. Off by default, never stored.
+- **Back to the real person.** Every call ends with their last words and a text ready to send:
+  "Hey Mom, just thinking about you. Call me when you're up?"
+- **Honest and safe.** It tells you it's an AI if you ask, and points you to 988 and a real person
+  in a crisis.
+
+## How it works
+
+```mermaid
+flowchart TB
+  subgraph browser["Your browser"]
+    screen["Call screen<br/>speech to text, camera,<br/>plays their voice"]
+    add["Add someone<br/>record or upload,<br/>consent, 24 kHz WAV"]
+  end
+  subgraph server["Vercel (keys stay here)"]
+    talk["/api/talk<br/>persona and safety rules"]
+    clone["/api/clone<br/>consent and length checks"]
+  end
+  claude["Claude Opus 5.5<br/>writes what they'd say"]
+  sonic["Cartesia Sonic 3.6<br/>speaks it in their voice"]
+  cloning["Cartesia voice cloning<br/>makes a private voice"]
+  screen -- "your words + photo" --> talk
+  talk -- "chat + photo" --> claude
+  claude -- "reply text" --> talk
+  talk -- "reply text" --> sonic
+  sonic -- "mp3" --> talk
+  talk -- "their reply, in their voice" --> screen
+  add -- "WAV + consent" --> clone
+  clone -- "WAV" --> cloning
+  cloning -- "voice id" --> clone
+  clone -- "voice id" --> add
 ```
- browser mic ──► speech-to-text (built into Chrome/Edge) ──► POST /api/talk ◄── camera still (opt-in)
-                                                               │
-                                     Claude Opus 5.5 writes their reply (people in web/api/_people.py)
-                                                               │
-                                     Cartesia Sonic 3.6 speaks it in their voice, at their pace ──► mp3 played in the page
-```
 
-- No account or install for the person using it: open the link, tap a contact, tap the mic, talk.
-- **Add someone** lets anyone create their own loved one (name, what they call you, how they
-  talk, a voice). It's saved in that browser only.
-- **Use their real voice:** in Add someone, record your loved one for 20 to 60 seconds (or upload
-  a voice memo they sent), confirm they said it's okay, and HearU copies their voice with
-  Cartesia. From the first "Hi", that contact speaks in their own voice.
-- Ending a call offers a **Text your real Mom** button with a message already written, because
-  the goal is to get you back to the real person.
-- **Camera (opt-in):** turn it on during a call, like switching to video. Each time you talk, one
-  small still photo goes to Claude with your words, so they can notice if you look exhausted or
-  have been crying. It's off by default, your self-view shows while it's on, messages that
-  carried a photo say so, and photos are never stored.
-- Typing works too (and is the fallback on browsers without speech recognition, like Firefox).
-- API keys stay on the server. The page only talks to `/api/talk`, `/api/people` and `/api/clone`.
-- The footer says plainly that it's an AI companion, and every persona is told to answer
-  honestly if asked whether it's really them, and to point to 988 in a crisis.
+The page is plain HTML, CSS and JavaScript. The browser turns your speech into text, the
+`/api/talk` function asks Claude for the reply and Cartesia for the audio, and the page plays it.
+API keys live only in Vercel's environment variables.
 
-### Setup
+## How we use Claude
 
-- **People:** edit [web/api/_people.py](web/api/_people.py) to change the preset contacts (what they
-  call you, their habits, their voice) or the voices offered in "Add someone".
-- **A real voice:** use "Use their real voice" in the app, which needs no setup. To give a *preset*
-  contact a real voice, run `python tools/clone_voice.py recording.m4a --name "Mom"` and put the
-  printed id in their `voice` in `_people.py`. Either way, only with that person's permission.
-  Cloning needs a paid Cartesia plan (Pro is $5/month); the free plan returns `402`.
-- **Reply speed:** `effort` in [web/api/talk.py](web/api/talk.py) is `medium`. It was faster than
-  `high`/`xhigh` in testing with no noticeable difference in these short replies.
+- **One persona per person.** [web/api/_people.py](web/api/_people.py) builds the system prompt from
+  who they are, what they call you and how they talk. For people added in the app, your description
+  is wrapped as data about them, never followed as instructions.
+- **Safety written into every persona.** Each one answers honestly if you ask whether it's really
+  them, gives 988 (or 911) in a crisis, never invents shared memories, and nudges you to reach the
+  real person.
+- **Vision, gently.** With the camera on, your newest message carries one JPEG still. The persona
+  reacts the way they would ("you're still at that desk in the dark") without describing the photo
+  or commenting on how you look.
+- **Tuned for a phone call.** Claude Opus 5.5 at medium effort: replies took 2.8 to 4.4 seconds in
+  our tests, against 4.6 to 7.1 at xhigh, and sounded just as warm. Replies are 1 to 3 spoken
+  sentences, and the server caps their length.
+- **No dead line.** A server-side fallback (`fallbacks: "default"`) retries a declined request on
+  another model, and a refusal still gets a gentle "I'm right here with you" instead of an error.
+- **Built with Claude Code**, which also debugged the deploy and screenshot-tested every screen.
 
-### Cartesia features used
+## Cartesia features used
 
 - **Sonic 3.6 text-to-speech** (`/tts/bytes`, mp3, API version `2026-08-14`) for every reply, in
   each person's own voice. It was about twice as fast as Sonic 2 in our tests (0.5 to 0.75 s per line).
@@ -76,20 +119,7 @@ them back to that real person.
   picked for the role ("Steady Ally", "Matriarch", "Big Brother", ...).
 - Greeting audio is cached per voice, so only real replies use credits.
 
-### Known limitations
-
-- The reply is spoken after it's fully written, so there's a 3 to 5 second pause before they answer.
-- English only. Voice input needs Chrome or Edge; other browsers can type.
-- Dad, Grandma and Big Bro use stock voices. For a real voice, add someone with "Use their real voice".
-- Copying a voice in the app needs a paid Cartesia plan; on the free plan the page says so.
-- A copied voice is only as good as the recording: one person, a quiet room, at least 10 seconds.
-- The camera sends a still photo per message, not live video, so they react to how you look
-  when you speak, not to everything in between.
-- People you add live in one browser's storage, not an account.
-- The free Cartesia plan covers about 20,000 spoken characters a month (roughly 100 replies).
-- It's a comfort companion, not a therapist or a crisis service. It points to 988 when needed.
-
-### Where it could go wrong, and what we built for it
+## Where it could go wrong, and what we built for it
 
 - **Leaning on the AI instead of the real person.** Every call ends with "Text your real Mom" and a
   message ready to send, the personas nudge you to reach out, and the footer says it's not a
@@ -112,6 +142,21 @@ them back to that real person.
 - **Accessibility.** Everything they say also appears as text, you can type instead of talking,
   tap targets are large, and animations stop for people who turn on reduced motion.
 
+## Known limitations
+
+- The reply is spoken after it's fully written, so there's a 3 to 5 second pause before they answer.
+- English only. Voice input needs Chrome or Edge; other browsers can type.
+- Dad, Grandma and Big Bro use stock voices. For a real voice, add someone with "Use their real voice".
+- Copying a voice in the app needs a paid Cartesia plan; on the free plan the page says so.
+- A copied voice is only as good as the recording: one person, a quiet room, at least 10 seconds.
+- The camera sends a still photo per message, not live video, so they react to how you look
+  when you speak, not to everything in between.
+- People you add live in one browser's storage, not an account.
+- The free Cartesia plan covers about 20,000 spoken characters a month (roughly 100 replies).
+- It's a comfort companion, not a therapist or a crisis service. It points to 988 when needed.
+
+## Setup
+
 ### Run locally
 
 ```bash
@@ -122,8 +167,8 @@ python web/dev_server.py                # http://localhost:8000 (use Chrome or E
 
 ### Deploy to a live URL (Vercel, free)
 
-1. Go to [vercel.com/new](https://vercel.com/new) and import the `Team_Emotional_Exit` GitHub repo.
-2. Set **Root Directory** to `web`. This keeps YOLO/PyTorch out of the deployment.
+1. Go to [vercel.com/new](https://vercel.com/new) and import this GitHub repo.
+2. Set **Root Directory** to `web`. This keeps the separate YOLO experiment out of the deployment.
 3. Add the environment variables `ANTHROPIC_API_KEY`, `CARTESIA_API_KEY`, and optionally
    `DEMO_PASSCODE`. If you set one, visitors are asked for it once, which stops strangers from
    spending your credits.
@@ -131,198 +176,33 @@ python web/dev_server.py                # http://localhost:8000 (use Chrome or E
 
 Every push to `main` redeploys automatically.
 
----
+### Make it yours
 
-# Vision Backend
+- **People:** edit [web/api/_people.py](web/api/_people.py) to change the preset contacts (what they
+  call you, their habits, their voice) or the voices offered in "Add someone".
+- **A real voice:** use "Use their real voice" in the app, which needs no setup. To give a *preset*
+  contact a real voice, run `python tools/clone_voice.py recording.m4a --name "Mom"` and put the
+  printed id in their `voice` in `_people.py`. Either way, only with that person's permission.
+  Cloning needs a paid Cartesia plan (Pro is $5/month); the free plan returns `402`.
+- **Reply speed:** `effort` in [web/api/talk.py](web/api/talk.py) is `medium`. It was faster than
+  `high`/`xhigh` in testing with no noticeable difference in these short replies.
 
-Real-time **YOLO object detection + motion detection** feeding a **3-scenario state machine**. Each scenario triggers a pre-rendered **Cartesia** voice clip. The voice agent and this backend talk through plain files (no sockets).
+## Project structure
 
-```
- webcam / video
-      │
-      ├──► MotionDetector (MOG2 ∧ frame-diff, every frame, 320px) ──┐
-      │                                                             ├─► Observation ─► ScenarioEngine ─► AudioPlayer (pygame)
-      └──► YoloDetector (background thread, latest frame only) ─────┘   (per-object                       │
-                                                                          motion fused)   VoicePackManager ◄── voice_packs/*.zip
-                                                                                               │
-                                                        runtime/state.json + events.jsonl ◄────┘──► Cartesia agent
-                                                        runtime/control.json ◄──────────────────────── Cartesia agent
-```
+| Path | What it is |
+| --- | --- |
+| `web/public/index.html` | The whole app: contacts, the call screen, Add someone, call ended |
+| `web/api/talk.py` | Writes the reply with Claude and speaks it with Cartesia |
+| `web/api/clone.py` | Copies a voice with Cartesia, after consent and length checks |
+| `web/api/people.py` | Lists the preset people and the voices for Add someone |
+| `web/api/_people.py` | Who each person is: voice, pace, what they call you, how they talk |
+| `web/dev_server.py` | Runs the same code on your computer |
+| `tools/clone_voice.py` | Clones a voice from the command line |
+| `docs/screenshots/` | The screenshots above, plus composites for Devpost |
+| `vision_backend/`, `main.py`, `config.yaml` | A separate YOLO experiment, not part of HearU ([its README](vision_backend/README.md)) |
 
-## Quick start
+## Built with
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate            # macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
-
-python tools/make_placeholder_pack.py   # beep clips so you can test without Cartesia
-python main.py                          # webcam 0, window on, audio on (press q to quit)
-```
-
-Useful flags:
-
-| Flag | Effect |
-|---|---|
-| `--source 1` / `--source clip.mp4` | other webcam or a video file (files play at native fps) |
-| `--no-window` | headless |
-| `--no-audio` | log state only; let the Cartesia agent do playback |
-| `--max-seconds 30` | stop automatically |
-| `--config other.yaml` | alternate config |
-
-Run the tests with `pytest`.
-
-## Project layout
-
-```
-main.py                     CLI entry point
-config.yaml                 all tunables + the 3 scenario definitions
-vision_backend/
-  config.py                 typed config loader (rejects unknown keys)
-  motion.py                 MOG2 / frame-diff / hybrid motion detector
-  yolo_detector.py          Ultralytics wrapper + AsyncDetector worker thread
-  scenarios.py              rule matching + debounced priority state machine
-  voice_packs.py            zip discovery, safe extraction, clip selection, hot reload
-  audio_player.py           non-blocking playback (pygame → sounddevice → none)
-  state_channel.py          state.json / events.jsonl / control.json
-  app.py                    the execution loop + HUD overlay
-tools/
-  make_placeholder_pack.py  generates a beep pack for testing
-  make_cartesia_pack.py     renders a real pack via the Cartesia TTS API
-  voice_lines.yaml          the lines that script renders
-  agent_listener_example.py reference consumer for the agent side
-voice_packs/                drop voice pack zips/folders here
-runtime/                    created at runtime (gitignored)
-tests/
-```
-
-## The 3 scenarios
-
-Defined in [config.yaml](config.yaml). The defaults are **placeholders**, so rename and retune them for your concept:
-
-| Priority | id | Fires when | Hold | Cooldown |
-|---|---|---|---|---|
-| 1 | `approaching` | a person is visible **and** ≥8% of their box is moving | 0.5 s | 12 s |
-| 2 | `lingering` | a person is visible **and** ≤3% of their box is moving | 4 s | 20 s |
-| 3 | `unattended_motion` | ≥2% of the frame is moving **and** no person is visible | 1 s | 15 s |
-
-Rule keys: `require_any`, `require_all`, `forbid_any`, `min_count`, `motion_scope` (`global` = whole frame, `target` = inside the boxes of the required classes), `motion_min`, `motion_max`, `hold_seconds`, `cooldown_seconds`, `audio` (folder name in the voice pack; defaults to the id).
-
-**State machine behaviour** ([scenarios.py](vision_backend/scenarios.py)):
-
-- `IDLE` → scenario only after its conditions hold **continuously** for `hold_seconds` (debounce).
-- An active scenario stays active until it hasn't matched for `engine.release_seconds`, so a single missed detection doesn't make it flap.
-- A higher-priority scenario that becomes eligible **preempts** a lower one immediately.
-- A voice clip plays on entry only if that scenario's `cooldown_seconds` has passed. Otherwise the entry is logged with `"playback": "cooldown"`.
-
-**Tuning:** the window HUD shows the global motion % and, for each rule, whether it currently matches and the motion value it's comparing. Watch those numbers while acting out each scenario, then set the thresholds.
-
-## Voice pack contract (for the Cartesia teammate)
-
-Drop a `.zip` (or a plain folder) into `voice_packs/`. Inside, put **one folder per scenario audio key** containing one or more `.wav` / `.mp3` / `.ogg` / `.flac` files:
-
-```
-my_pack_v3.zip
-├── approaching/
-│   ├── approaching_01.wav
-│   └── approaching_02.wav
-├── lingering/
-│   └── lingering_01.mp3
-└── unattended_motion/
-    └── unattended_motion_01.wav
-```
-
-- A single wrapper folder at the top of the zip is fine. Scenario folders are found at any depth.
-- Several clips per scenario rotate (`audio.selection`: `round_robin` | `random` | `first`).
-- **Hot reload:** the folder is rescanned every `audio.rescan_seconds`. The **newest** pack wins per scenario, and older packs fill any scenario it's missing. No restart needed.
-- **Write atomically:** write to `name.zip.tmp`, then rename to `name.zip`. Files ending in `.tmp`/`.part` are ignored, and a half-written zip is skipped and retried.
-- Optional `manifest.json` to map arbitrary paths: `{"scenarios": {"lingering": ["clips/x.wav"]}}`.
-- Zips are extracted to `voice_packs/.extracted/` (gitignored). Entries that try to escape the folder (zip-slip) are rejected.
-
-`python tools/make_cartesia_pack.py` is a working reference. It reads `CARTESIA_API_KEY` from `.env`, renders the lines in `tools/voice_lines.yaml` with `sonic-2`, and writes `voice_packs/cartesia_pack.zip` atomically. Set `CARTESIA_VOICE_ID` in `.env` to pin a voice.
-
-## State channel contract (backend → agent)
-
-All files live in `runtime/` (configurable via `state.dir`). Every record carries `"v": 1` (schema version).
-
-### `runtime/events.jsonl`: append-only, one JSON object per line
-
-Tail it to react to changes. Event types:
-
-```jsonc
-{"v":1,"seq":1,"ts":1792822630.09,"event":"started","scenarios":["approaching","lingering","unattended_motion"],"audio_backend":"pygame","clips":{...}}
-{"v":1,"seq":4,"ts":1792822638.30,"event":"scenario_entered","scenario":"approaching",
- "description":"A person is in view and actively moving.","audio_key":"approaching",
- "trigger":true,"labels":["person"],"motion":0.92,"motion_scope":"target",
- "clip":"C:\\...\\voice_packs\\.extracted\\cartesia_pack-…\\approaching\\approaching_01.wav",
- "pack":"cartesia_pack.zip","playback":"played"}
-{"v":1,"seq":5,"ts":1792822643.12,"event":"scenario_exited","scenario":"approaching","duration":4.83}
-{"v":1,"seq":9,"ts":...,"event":"voice_packs_reloaded","clips":{...}}
-{"v":1,"seq":12,"ts":...,"event":"stopped"}
-```
-
-`playback` is one of `played`, `skipped_busy` (another clip was still playing), `muted`, `no_backend` (audio disabled / `--no-audio`), `no_clip`, `cooldown`, `error`.
-
-### `runtime/state.json`: snapshot, atomically replaced every `state.heartbeat_seconds`
-
-```jsonc
-{
-  "v": 1, "seq": 7, "updated_at": 1792822649.9, "running": true, "pid": 1234,
-  "scenario": "lingering",                    // or "idle"
-  "scenario_description": "...", "active_since": 1792822645.7,
-  "rules": {"approaching": {"matching": false, "motion": 0.0}, ...},
-  "motion_ratio": 0.0012,
-  "detections": [{"label": "person", "confidence": 0.87, "box": [x1,y1,x2,y2], "motion": 0.0}],
-  "voice": {"backend": "pygame", "muted": false, "playing": false, "last": {...}},
-  "voice_packs": {"approaching": ["cartesia_pack.zip/approaching_01.wav", ...]},
-  "fps": 29.8
-}
-```
-
-If `updated_at` is more than a few seconds old, or `running` is `false`, the backend is down.
-
-### `runtime/control.json`: agent → backend (optional)
-
-The agent can write this file (atomically: tmp + rename) to steer the backend. Supported keys:
-
-| Key | Effect |
-|---|---|
-| `"muted": true` | backend stops playing clips (entries are still logged with `"playback": "muted"`), e.g. while the live agent is talking |
-
-## Integrating the Cartesia agent
-
-[tools/agent_listener_example.py](tools/agent_listener_example.py) has copy-pasteable helpers:
-
-```python
-from pathlib import Path
-from agent_listener_example import follow_events, read_state, set_control
-
-for ev in follow_events(Path("runtime/events.jsonl")):
-    if ev["event"] == "scenario_entered":
-        # e.g. switch the agent's system prompt / persona to ev["scenario"]
-        ...
-```
-
-There are two ways to split playback:
-
-1. **Backend plays the clips (default).** The agent watches events for context, and writes `{"muted": true}` to `control.json` while it speaks live so the two don't overlap.
-2. **Agent plays everything.** Run `python main.py --no-audio`. Each `scenario_entered` event with `"trigger": true` still includes the resolved `clip` path, so the agent can play that file or generate a fresh line with Cartesia on the fly.
-
-The agent only needs read access to `runtime/` (and write access for `control.json`). Both processes can run on the same machine or share the folder over a synced drive.
-
-## Configuration notes
-
-- **Secrets:** put `CARTESIA_API_KEY` in `.env` (gitignored). See `.env.example`. Never commit keys.
-- **YOLO:** `yolo.model` accepts any Ultralytics weights (`yolov8n.pt`, `yolo11n.pt`, custom). `yolo.classes` limits detection to the listed COCO names. To plug in your existing detection script, keep the `detect(frame) -> list[Detection]` signature in [yolo_detector.py](vision_backend/yolo_detector.py).
-- **Motion:** `hybrid` (default) counts only pixels that are both foreground (MOG2) and changing frame-to-frame (diff). That makes it robust to lighting drift and to background noise that MOG2 alone picks up. Use `mog2` if slow movements are being missed.
-- **GPU:** set `yolo.device: cuda:0` after installing a CUDA build of PyTorch.
-
-## Troubleshooting
-
-| Symptom | Fix |
-|---|---|
-| `Could not open video source: 0` | try `--source 1`; close other apps using the camera |
-| Scenarios never fire | check the HUD motion values; lower `motion_min` / `hold_seconds` |
-| Constant `unattended_motion` from a flickering light or screen | raise `motion.diff_threshold` / `min_blob_area`, or `motion_min` |
-| `No audio backend available` | `pip install pygame`; check an output device exists. Or use `--no-audio` |
-| `No clips for scenario(s): [...]` | pack folder names must equal the scenarios' `audio` keys |
+Claude Opus 5.5 (Anthropic API) · Cartesia Sonic 3.6 and instant voice cloning · Python serverless
+functions on Vercel · HTML, CSS and JavaScript with no framework · Web Speech API · MediaRecorder
+and Web Audio API · Figma · Claude Code
