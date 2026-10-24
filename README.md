@@ -1,4 +1,60 @@
-# Team Emotional Exit: Vision Backend
+# Team Emotional Exit
+
+This repo has two parts:
+
+1. **Call Mom (`web/`)**: the live demo. A web page where you talk out loud and a comforting
+   "Mom" answers in her voice. It's for the late nights when you can't reach her.
+2. **Vision backend (everything else)**: a local YOLO + motion pipeline that plays voice clips
+   when a camera sees certain situations. Documented further down.
+
+## Call Mom: live voice companion
+
+```
+ browser mic ──► speech-to-text (built into Chrome/Edge) ──► POST /api/talk
+                                                               │
+                                     Claude Opus 5.5 writes Mom's reply (persona in web/api/_persona.py)
+                                                               │
+                                     Cartesia sonic-2 speaks it in Mom's voice ──► mp3 played in the page
+```
+
+- No account or install for the person using it: open the link, tap **Call Mom**, tap the mic, talk.
+- Typing works too (and is the fallback on browsers without speech recognition, like Firefox).
+- API keys stay on the server. The page only talks to `/api/talk`.
+- The footer says plainly that it's an AI using Mom's voice with her permission, and the
+  persona is told to answer honestly if asked and to point to 988 in a crisis.
+
+### Make it your mom
+
+- **Personality:** edit [web/api/_persona.py](web/api/_persona.py) (what she calls you, her habits, her greeting).
+- **Voice:** `CARTESIA_VOICE_ID`. The default is the stock voice "Rory - Maternal Vibe". To use her real
+  voice (only with her permission), record 10 to 30 seconds of her talking, then run
+  `python tools/clone_voice.py mom.m4a --save`. Cloning needs a paid Cartesia plan, since the free
+  tier returns `402 Feature not available`.
+- **Reply quality vs speed:** `effort` in [web/api/talk.py](web/api/talk.py) is `xhigh` (most thoughtful,
+  a few seconds per reply). Use `medium` or `low` for snappier back-and-forth.
+
+### Run locally
+
+```bash
+pip install -r web/requirements.txt     # just the anthropic SDK
+# fill in ANTHROPIC_API_KEY, CARTESIA_API_KEY, CARTESIA_VOICE_ID in .env (see .env.example)
+python web/dev_server.py                # http://localhost:8000 (use Chrome or Edge)
+```
+
+### Deploy to a live URL (Vercel, free)
+
+1. Go to [vercel.com/new](https://vercel.com/new) and import the `Team_Emotional_Exit` GitHub repo.
+2. Set **Root Directory** to `web`. This keeps YOLO/PyTorch out of the deployment.
+3. Add the environment variables `ANTHROPIC_API_KEY`, `CARTESIA_API_KEY`, `CARTESIA_VOICE_ID`,
+   and optionally `DEMO_PASSCODE`. If you set one, visitors are asked for it once, which stops
+   strangers from spending your credits.
+4. Click **Deploy**. You get `https://<project>.vercel.app`, served over HTTPS, which browsers require for the mic.
+
+Every push to `main` redeploys automatically.
+
+---
+
+# Vision Backend
 
 Real-time **YOLO object detection + motion detection** feeding a **3-scenario state machine**. Each scenario triggers a pre-rendered **Cartesia** voice clip. The voice agent and this backend talk through plain files (no sockets).
 

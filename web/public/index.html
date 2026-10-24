@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Call Mom</title>
+<meta name="description" content="A comforting voice for the nights you can't reach her.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1424;
+    --bg-2: #1a2138;
+    --text: #f3ece2;
+    --muted: #a9a3b8;
+    --warm: #f2b880;
+    --warm-2: #e8896a;
+    --bubble-you: #26304f;
+    --bubble-mom: #2e2a3d;
+    --danger: #ff8a80;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: radial-gradient(ellipse at top, var(--bg-2), var(--bg) 70%);
+    color: var(--text);
+    font-family: Inter, system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  main {
+    width: 100%;
+    max-width: 560px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px 16px;
+    min-height: 0;
+  }
+  header { text-align: center; }
+  h1 {
+    font-family: Fraunces, Georgia, serif;
+    font-weight: 600;
+    font-size: 2rem;
+    margin: 8px 0 4px;
+  }
+  .tagline { color: var(--muted); margin: 0; font-size: 0.95rem; }
+
+  .orb-wrap { display: flex; justify-content: center; padding: 28px 0 16px; }
+  .orb {
+    width: 132px; height: 132px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe2c2, var(--warm) 45%, var(--warm-2));
+    box-shadow: 0 0 40px rgba(242, 184, 128, 0.25);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+  }
+  .orb.speaking { animation: breathe 1.6s ease-in-out infinite; }
+  .orb.thinking { animation: pulse 1.2s ease-in-out infinite; opacity: 0.8; }
+  .orb.listening { box-shadow: 0 0 0 10px rgba(242, 184, 128, 0.15), 0 0 60px rgba(242, 184, 128, 0.35); }
+  @keyframes breathe { 50% { transform: scale(1.08); box-shadow: 0 0 70px rgba(242, 184, 128, 0.5); } }
+  @keyframes pulse { 50% { transform: scale(0.95); } }
+
+  .status { text-align: center; color: var(--muted); min-height: 1.4em; margin: 0 0 12px; }
+
+  .chat {
+    flex: 1; overflow-y: auto; min-height: 0;
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 4px 2px 12px;
+  }
+  .msg { max-width: 85%; padding: 10px 14px; border-radius: 16px; line-height: 1.45; }
+  .msg.you { align-self: flex-end; background: var(--bubble-you); border-bottom-right-radius: 4px; }
+  .msg.mom { align-self: flex-start; background: var(--bubble-mom); border-bottom-left-radius: 4px; }
+  .msg.interim { opacity: 0.6; font-style: italic; }
+  .msg.error { align-self: center; background: none; color: var(--danger); font-size: 0.9rem; }
+
+  .controls { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 8px; }
+  button {
+    font: inherit; border: none; cursor: pointer; color: #2a1a10;
+    background: linear-gradient(135deg, var(--warm), var(--warm-2));
+    border-radius: 999px; padding: 14px 28px; font-weight: 500; font-size: 1.05rem;
+    transition: transform 0.1s ease, opacity 0.2s ease;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.secondary { background: transparent; color: var(--muted); padding: 6px 12px; font-size: 0.9rem; }
+  .mic { width: 76px; height: 76px; padding: 0; display: grid; place-items: center; }
+  .mic svg { width: 32px; height: 32px; }
+  .mic.on { background: var(--danger); }
+
+  form.type { display: none; width: 100%; gap: 8px; }
+  form.type.show { display: flex; }
+  form.type input {
+    flex: 1; min-width: 0; font: inherit; color: var(--text);
+    background: var(--bubble-you); border: 1px solid #3a4468; border-radius: 999px; padding: 12px 16px;
+  }
+  form.type button { padding: 12px 18px; font-size: 1rem; }
+
+  footer {
+    width: 100%; max-width: 560px; padding: 8px 16px 18px;
+    color: var(--muted); font-size: 0.78rem; text-align: center; line-height: 1.5;
+  }
+  footer a { color: var(--warm); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Call Mom</h1>
+    <p class="tagline">For the nights you can't reach her.</p>
+  </header>
+
+  <div class="orb-wrap"><div id="orb" class="orb"></div></div>
+  <p id="status" class="status"></p>
+
+  <div id="chat" class="chat" aria-live="polite"></div>
+
+  <div class="controls">
+    <button id="start">Call Mom</button>
+    <button id="mic" class="mic hidden" aria-label="Tap to talk">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
+    </button>
+    <form id="typeForm" class="type">
+      <input id="typeInput" placeholder="Type to Mom…" autocomplete="off" maxlength="1000">
+      <button type="submit">Send</button>
+    </form>
+    <button id="toggleType" class="secondary hidden">Type instead</button>
+  </div>
+</main>
+<footer>
+  An AI companion speaking in Mom's voice, made with her permission. It's here to comfort you,
+  not to replace her. Reach out to her when you can.
+  In crisis? Call or text <a href="tel:988">988</a>.
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const orb = $("orb"), statusEl = $("status"), chat = $("chat");
+const startBtn = $("start"), micBtn = $("mic");
+const typeForm = $("typeForm"), typeInput = $("typeInput"), toggleType = $("toggleType");
+
+const history = [];          // [{role, content}] sent to the server
+const player = new Audio();  // one element, unlocked by the first tap (needed on iOS)
+let busy = false;
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null, listening = false, interimEl = null;
+
+function getPasscode() {
+  try { return localStorage.getItem("passcode") || ""; } catch { return ""; }
+}
+function setPasscode(v) {
+  try { localStorage.setItem("passcode", v); } catch {}
+}
+
+function setState(state, text) {
+  orb.className = "orb " + (state || "");
+  statusEl.textContent = text || "";
+}
+
+function addMsg(role, text, extra) {
+  const el = document.createElement("div");
+  el.className = `msg ${role} ${extra || ""}`;
+  el.textContent = text;
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+  return el;
+}
+
+function setBusy(b) {
+  busy = b;
+  micBtn.disabled = b;
+  typeForm.querySelector("button").disabled = b;
+}
+
+async function callApi(body) {
+  const res = await fetch("/api/talk", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...body, passcode: getPasscode() }),
+  });
+  if (res.status === 401) {
+    const code = prompt("Enter the demo passcode:");
+    if (!code) throw new Error("A passcode is needed to talk.");
+    setPasscode(code.trim());
+    return callApi(body);
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Something went wrong (${res.status}).`);
+  return data;
+}
+
+// 0.05s of silence as a WAV, played on the first tap so iOS allows audio later.
+function silentWavUrl() {
+  const rate = 8000, samples = 400, buf = new ArrayBuffer(44 + samples);
+  const v = new DataView(buf), w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); v.setUint32(4, 36 + samples, true); w(8, "WAVEfmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+  w(36, "data"); v.setUint32(40, samples, true);
+  for (let i = 0; i < samples; i++) v.setUint8(44 + i, 128);
+  return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+}
+
+function playAudio(b64) {
+  return new Promise((resolve) => {
+    if (!b64) return resolve();
+    player.src = "data:audio/mpeg;base64," + b64;
+    player.onended = player.onerror = () => resolve();
+    player.play().catch(() => resolve());
+  });
+}
+
+async function momSays(data) {
+  history.push({ role: "assistant", content: data.reply });
+  addMsg("mom", data.reply);
+  setState("speaking", "Mom is speaking…");
+  await playAudio(data.audio);
+  setState("", SpeechRecognition ? "Tap the mic to talk" : "Type to talk");
+}
+
+async function send(text) {
+  text = text.trim();
+  if (!text || busy) return;
+  addMsg("you", text);
+  history.push({ role: "user", content: text });
+  setBusy(true);
+  setState("thinking", "Mom is thinking…");
+  try {
+    await momSays(await callApi({ history }));
+  } catch (e) {
+    history.pop();
+    addMsg("error", e.message, "error");
+    setState("", "");
+  } finally {
+    setBusy(false);
+  }
+}
+
+// -- speech recognition ------------------------------------------------------
+
+function setupRecognition() {
+  recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = true;
+  recognition.continuous = false;
+  let finalText = "";
+
+  recognition.onstart = () => {
+    listening = true; finalText = "";
+    micBtn.classList.add("on");
+    setState("listening", "Listening…");
+  };
+  recognition.onresult = (e) => {
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const r = e.results[i];
+      if (r.isFinal) finalText += r[0].transcript; else interim += r[0].transcript;
+    }
+    const shown = (finalText + interim).trim();
+    if (shown) {
+      interimEl = interimEl || addMsg("you", "", "interim");
+      interimEl.textContent = shown;
+      chat.scrollTop = chat.scrollHeight;
+    }
+  };
+  recognition.onerror = (e) => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      addMsg("error", "Microphone access was blocked. Allow it in the browser, or type instead.", "error");
+      typeForm.classList.add("show");
+    }
+  };
+  recognition.onend = () => {
+    listening = false;
+    micBtn.classList.remove("on");
+    if (interimEl) { interimEl.remove(); interimEl = null; }
+    if (finalText.trim()) send(finalText);
+    else if (!busy) setState("", "Tap the mic to talk");
+  };
+}
+
+micBtn.addEventListener("click", () => {
+  if (busy) return;
+  if (listening) { recognition.stop(); return; }
+  player.pause();
+  try { recognition.start(); } catch {}
+});
+
+// -- start / typing ---------------------------------------------------------------
+
+startBtn.addEventListener("click", async () => {
+  // Unlock audio playback inside the user's tap.
+  player.src = silentWavUrl();
+  player.play().catch(() => {});
+
+  startBtn.classList.add("hidden");
+  if (SpeechRecognition) {
+    setupRecognition();
+    micBtn.classList.remove("hidden");
+    toggleType.classList.remove("hidden");
+  } else {
+    typeForm.classList.add("show");
+  }
+  setBusy(true);
+  setState("thinking", "Calling Mom…");
+  try {
+    await momSays(await callApi({ greeting: true }));
+  } catch (e) {
+    addMsg("error", e.message, "error");
+    setState("", "");
+  } finally {
+    setBusy(false);
+  }
+});
+
+toggleType.addEventListener("click", () => {
+  const show = !typeForm.classList.contains("show");
+  typeForm.classList.toggle("show", show);
+  toggleType.textContent = show ? "Hide keyboard" : "Type instead";
+  if (show) typeInput.focus();
+});
+
+typeForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = typeInput.value;
+  typeInput.value = "";
+  send(text);
+});
+</script>
+</body>
+</html>
