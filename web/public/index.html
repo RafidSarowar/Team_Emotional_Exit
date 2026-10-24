@@ -79,9 +79,19 @@
 
   /* call */
   #call { position: relative; }
+  /* Your camera preview. Tap it to switch between three sizes. */
+  .self-wrap { position: absolute; top: 4px; right: 0; z-index: 1; cursor: pointer; transition: width 0.2s ease; }
+  .self-wrap.size-s { width: clamp(90px, 24vw, 120px); }
+  .self-wrap.size-m { width: clamp(110px, 30vw, 200px); }
+  .self-wrap.size-l { width: clamp(150px, 46vw, 300px); }
   .self-view {
-    position: absolute; top: 4px; right: 0; width: 88px; height: 118px; object-fit: cover;
+    display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover;
     border-radius: 14px; border: 2px solid var(--warm); transform: scaleX(-1); background: #000;
+  }
+  .self-size {
+    position: absolute; bottom: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 0.85rem; color: var(--text);
+    background: rgba(15, 20, 36, 0.75); pointer-events: none;
   }
   .call-tools { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
   button.secondary.on { color: var(--warm); }
@@ -195,7 +205,11 @@
   </section>
 
   <section id="call" class="screen hidden">
-    <video id="selfView" class="self-view hidden" autoplay muted playsinline aria-label="Your camera"></video>
+    <div id="selfWrap" class="self-wrap size-m hidden" role="button" tabindex="0"
+         title="Tap to change the size" aria-label="Your camera. Tap to change the size.">
+      <video id="selfView" class="self-view" autoplay muted playsinline></video>
+      <span class="self-size" aria-hidden="true">⤢</span>
+    </div>
     <header>
       <h2 id="callName"></h2>
       <p id="timer" class="tagline"></p>
@@ -435,8 +449,28 @@ async function theySay(data, id) {
 
 // -- camera (opt-in, like turning on video in a call) ---------------------------
 
-const selfView = $("selfView"), camBtn = $("camBtn");
+const selfView = $("selfView"), selfWrap = $("selfWrap"), camBtn = $("camBtn");
 let camStream = null;
+
+// Preview size: small / medium / large, remembered in this browser.
+const CAM_SIZES = ["size-s", "size-m", "size-l"];
+let camSize = "size-m";
+try { camSize = CAM_SIZES.includes(localStorage.getItem("nearby.camSize")) ? localStorage.getItem("nearby.camSize") : camSize; } catch {}
+
+function applyCamSize() {
+  selfWrap.classList.remove(...CAM_SIZES);
+  selfWrap.classList.add(camSize);
+}
+function cycleCamSize() {
+  camSize = CAM_SIZES[(CAM_SIZES.indexOf(camSize) + 1) % CAM_SIZES.length];
+  try { localStorage.setItem("nearby.camSize", camSize); } catch {}
+  applyCamSize();
+}
+selfWrap.addEventListener("click", cycleCamSize);
+selfWrap.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cycleCamSize(); }
+});
+applyCamSize();
 
 async function cameraOn() {
   try {
@@ -446,7 +480,7 @@ async function cameraOn() {
     return;
   }
   selfView.srcObject = camStream;
-  selfView.classList.remove("hidden");
+  selfWrap.classList.remove("hidden");
   camBtn.textContent = "Camera on: they see a photo when you talk";
   camBtn.classList.add("on");
 }
@@ -455,7 +489,7 @@ function cameraOff() {
   if (camStream) camStream.getTracks().forEach((t) => t.stop());
   camStream = null;
   selfView.srcObject = null;
-  selfView.classList.add("hidden");
+  selfWrap.classList.add("hidden");
   camBtn.textContent = "Turn on camera";
   camBtn.classList.remove("on");
 }
