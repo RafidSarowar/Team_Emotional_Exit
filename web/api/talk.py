@@ -67,11 +67,11 @@ def ask_mom(history: list[dict]) -> str:
     _client = _client or anthropic.Anthropic()
     response = _client.beta.messages.create(
         model=MODEL,
-        # Thinking counts toward max_tokens, so leave plenty of room at high effort.
+        # Thinking counts toward max_tokens, so leave room for it.
         max_tokens=16000,
-        # Highest practical effort: the most considered replies, a few seconds slower.
-        # Drop to "medium" or "low" if replies feel too slow in conversation.
-        output_config={"effort": "xhigh"},
+        # Medium keeps the pause before Mom answers short. Higher effort was slower
+        # and didn't noticeably improve these short, spoken replies.
+        output_config={"effort": "medium"},
         # If a safety classifier declines, retry on a fallback model instead of failing.
         betas=["server-side-fallback-2026-07-01"],
         fallbacks="default",
