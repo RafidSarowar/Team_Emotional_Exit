@@ -6,6 +6,8 @@ Request:  {"person": "mom",                      a preset id from _people.PEOPLE
            "history": [{"role": "user"|"assistant", "content": "..."}, ...],
            "image": "<base64 jpeg>",              optional camera still for the newest message
            "greeting": true,                      (instead of history) start the call
+           "tzOffset": 420,                       the browser's getTimezoneOffset(), in minutes,
+                                                  so they know what time it is for the user
            "passcode": "..."}
           (the last history item must be the new user message)
 Response: {"reply": "...", "audio": "<base64 mp3>"}
@@ -26,6 +28,7 @@ import re
 import sys
 import urllib.error
 import urllib.request
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler
 
 import anthropic
@@ -49,6 +52,19 @@ _greeting_audio: dict[tuple[str, float, str], str] = {}  # (voice, speed, text) 
 
 class BadRequest(Exception):
     pass
+
+
+def local_now(tz_offset) -> datetime | None:
+    """The user's local time: our clock, shifted by the browser's UTC offset.
+
+    JavaScript reports the offset as UTC minus local time, in minutes (420 in California
+    in summer, -180 in Istanbul). Anything else is ignored rather than refused.
+    """
+    if isinstance(tz_offset, bool) or not isinstance(tz_offset, (int, float)):
+        return None
+    if not -840 <= tz_offset <= 840:
+        return None
+    return datetime.now(timezone.utc) - timedelta(minutes=tz_offset)
 
 
 def resolve_person(payload: dict) -> dict:
@@ -109,7 +125,7 @@ def shorten(text: str) -> str:
     return cut[:ends[-1]].strip() if ends else cut.rstrip() + "…"
 
 
-def ask(person: dict, history: list[dict], image: str | None = None) -> str:
+def ask(person: dict, history: list[dict], image: str | None = None, now: datetime | None = None) -> str:
     global _client
     _client = _client or anthropic.Anthropic()
     messages = history
@@ -130,7 +146,7 @@ def ask(person: dict, history: list[dict], image: str | None = None) -> str:
         # If a safety classifier declines, retry on a fallback model instead of failing.
         betas=["server-side-fallback-2026-07-01"],
         fallbacks="default",
-        system=system_prompt(person),
+        system=system_prompt(person, now),
         messages=messages,
     )
     text = " ".join(b.text for b in response.content if b.type == "text").strip()
@@ -173,16 +189,17 @@ def handle(payload: dict) -> tuple[int, dict]:
     if passcode and payload.get("passcode") != passcode:
         return 401, {"error": "passcode"}
 
+    now = local_now(payload.get("tzOffset"))
     try:
         person = resolve_person(payload)
         if payload.get("greeting"):
-            reply = greeting(person)
+            reply = greeting(person, now)
         else:
             history = clean_history(payload.get("history"))
             image = clean_image(payload.get("image"))
             if not os.environ.get("ANTHROPIC_API_KEY"):
                 return 500, {"error": "ANTHROPIC_API_KEY is not set on the server."}
-            reply = ask(person, history, image)
+            reply = ask(person, history, image, now)
     except BadRequest as e:
         return 400, {"error": str(e)}
     except anthropic.RateLimitError:

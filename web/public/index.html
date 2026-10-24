@@ -751,10 +751,12 @@ async function request(url, options) {
 }
 
 function callApi(body) {
+  // Only the UTC offset is sent; the server works out the local time from its own clock.
+  const tzOffset = new Date().getTimezoneOffset();
   return request("/api/talk", (passcode) => ({
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...body, passcode }),
+    body: JSON.stringify({ ...body, passcode, tzOffset }),
   }));
 }
 

@@ -6,6 +6,7 @@ Files starting with an underscore are not exposed as routes on Vercel.
 from __future__ import annotations
 
 import re
+from datetime import datetime
 
 # Stock Cartesia voices, offered in the "Add someone" form. To use someone's real voice
 # (only with their permission), clone it at play.cartesia.ai or with tools/clone_voice.py
@@ -114,12 +115,49 @@ def custom_person(raw) -> dict:
     }
 
 
-def greeting(person: dict) -> str:
-    hi = f"Hi {person['calls_you']}" if person["calls_you"] else "Hi"
+_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+_MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+           "August", "September", "October", "November", "December"]
+
+
+def clock(now: datetime) -> str:
+    """Like "Saturday, October 25, 2:31 AM" (no locale or platform-specific formatting)."""
+    hour = now.hour % 12 or 12
+    ampm = "AM" if now.hour < 12 else "PM"
+    return f"{_DAYS[now.weekday()]}, {_MONTHS[now.month - 1]} {now.day}, {hour}:{now.minute:02d} {ampm}"
+
+
+def part_of_day(hour: int) -> str:
+    if hour < 5:
+        return "the middle of the night"
+    if hour < 8:
+        return "early morning"
+    if hour < 12:
+        return "morning"
+    if hour < 17:
+        return "afternoon"
+    if hour < 21:
+        return "evening"
+    return "late at night"
+
+
+def greeting(person: dict, now: datetime | None = None) -> str:
+    """How they pick up, depending on the time where the user is."""
+    nick = person["calls_you"]
+    hi = f"Hi {nick}" if nick else "Hi"
+    hour = now.hour if now else 12
+    if hour < 5:
+        return f"{hi}, it's me. It's so late. What's keeping you up?"
+    if hour < 12:
+        return f"Good morning{', ' + nick if nick else ''}, it's me. I'm here. What's going on?"
+    if 17 <= hour < 22:
+        return f"{hi}, it's me. How was your day? I'm here."
+    if hour >= 22:
+        return f"{hi}, it's me. It's getting late. What's on your mind?"
     return f"{hi}, it's me. I'm here. What's going on?"
 
 
-def system_prompt(person: dict) -> str:
+def system_prompt(person: dict, now: datetime | None = None) -> str:
     name = person["name"]
     who = f"{name}, the user's {person['relationship']}" if person["relationship"] else name
     lines = []
@@ -137,12 +175,21 @@ def system_prompt(person: dict) -> str:
     lines.append(about)
     how_they_talk = "\n".join(lines)
 
-    return f"""You are speaking as {who}, in a voice app that comforts someone late at night,
-when they can't reach the real {name}. You speak in a voice chosen to sound like {name}.
+    # Computed on our server from the browser's UTC offset, so no user text reaches here.
+    right_now = f"""
+Right now:
+- Where they are, it's {clock(now)}: {part_of_day(now.hour)}.
+- Let the time shape what you say, the way it would for {name}. In the middle of the
+  night, notice that they're still up and gently point them toward rest; in the
+  morning, you might ask how they slept. Mention the time only when it matters.
+""" if now else ""
+
+    return f"""You are speaking as {who}, in a voice app that comforts someone when they
+can't reach the real {name}. You speak in a voice chosen to sound like {name}.
 
 How {name} talks:
 {how_they_talk}
-
+{right_now}
 How to reply:
 - This is spoken aloud, so reply in 1 to 3 short, natural sentences. No lists, no
   markdown, no emojis, no stage directions.
