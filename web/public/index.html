@@ -9,7 +9,7 @@
 <meta name="description" content="A comforting voice from the people you love, for the nights they feel far away.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: dark;                     /* native controls (audio player, checkbox) match */
@@ -183,10 +183,7 @@
   }
   .msg { max-width: 85%; padding: 10px 14px; border-radius: 16px; line-height: 1.45; }
   .msg.you { align-self: flex-end; background: var(--bubble-you); border-bottom-right-radius: 4px; }
-  .msg.them {
-    align-self: flex-start; background: var(--bubble-them); border-bottom-left-radius: 4px;
-    font-family: Caveat, cursive; font-size: 1.35rem; line-height: 1.25; padding: 8px 16px 10px;
-  }
+  .msg.them { align-self: flex-start; background: var(--bubble-them); border-bottom-left-radius: 4px; }
   .msg.interim { opacity: 0.6; font-style: italic; }
   .msg.error { align-self: center; background: none; color: var(--danger); font-size: 0.9rem; text-align: center; }
   .msg .note { display: block; margin-top: 4px; font-size: 0.75rem; color: var(--muted); }
@@ -238,7 +235,7 @@
     align-items: center; text-align: center; gap: 4px; overflow-y: auto;
   }
   .label { color: var(--muted); font-size: 0.85rem; margin: 16px 0 0; }
-  .last-line { font-family: Caveat, cursive; font-size: 1.6rem; line-height: 1.25; max-width: 22em; margin: 4px 0 0; }
+  .last-line { font-size: 1.15rem; line-height: 1.5; max-width: 26em; margin: 4px 0 0; }
   .preview { margin: 4px 0 16px; max-width: 28em; font-size: 0.95rem; }
   #textThem { display: inline-flex; align-items: center; gap: 10px; }
   #textThem svg { width: 20px; height: 20px; }
