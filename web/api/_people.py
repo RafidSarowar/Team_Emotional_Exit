@@ -31,8 +31,10 @@ PEOPLE = {
         "name": "Mom",
         "relationship": "mom",
         "calls_you": "sweetheart",
-        "voice": "9329fbdb-e285-4fba-95ec-592e15f14476",
-        "speed": 0.95,
+        # A mom's voice our team cloned with Cartesia for the demo, to show what hearing
+        # your own mom sounds like. The stock "Warm mom" voice is still in "Choose a voice".
+        "voice": "93b2c10d-caf5-4a12-9646-cd3750659020",
+        "speed": 1.0,  # a cloned voice keeps its own natural pace
         "details": """
 - She's warm, a little playful, and gets straight to what matters.
 - She often asks whether you've eaten and reminds you to drink water.

@@ -2,6 +2,10 @@
 
 **Live demo: https://team-emotional-exit-tau.vercel.app** (use Chrome or Edge and allow the microphone)
 
+| Call someone you miss | They answer in their voice | Or copy their real voice | Then text the real one |
+| --- | --- | --- | --- |
+| <img src="docs/screenshots/01-contacts.png" width="190" alt="HearU contacts: Mom, Dad, Grandma, Big Bro"> | <img src="docs/screenshots/05-conversation.png" width="190" alt="A call with Mom at 2:15 AM"> | <img src="docs/screenshots/07-real-voice.png" width="190" alt="Recording a loved one's real voice, with consent"> | <img src="docs/screenshots/06-call-ended.png" width="190" alt="Call ended, with a Text your real Mom button"> |
+
 This repo has two parts:
 
 1. **HearU (`web/`)**: the live demo. A web page where you call a loved one (Mom, Dad,
@@ -29,6 +33,9 @@ them back to that real person.
 - No account or install for the person using it: open the link, tap a contact, tap the mic, talk.
 - **Add someone** lets anyone create their own loved one (name, what they call you, how they
   talk, a voice). It's saved in that browser only.
+- **Use their real voice:** in Add someone, record your loved one for 20 to 60 seconds (or upload
+  a voice memo they sent), confirm they said it's okay, and HearU copies their voice with
+  Cartesia. From the first "Hi", that contact speaks in their own voice.
 - Ending a call offers a **Text your real Mom** button with a message already written, because
   the goal is to get you back to the real person.
 - **Camera (opt-in):** turn it on during a call, like switching to video. Each time you talk, one
@@ -36,7 +43,7 @@ them back to that real person.
   have been crying. It's off by default, your self-view shows while it's on, messages that
   carried a photo say so, and photos are never stored.
 - Typing works too (and is the fallback on browsers without speech recognition, like Firefox).
-- API keys stay on the server. The page only talks to `/api/talk` and `/api/people`.
+- API keys stay on the server. The page only talks to `/api/talk`, `/api/people` and `/api/clone`.
 - The footer says plainly that it's an AI companion, and every persona is told to answer
   honestly if asked whether it's really them, and to point to 988 in a crisis.
 
@@ -44,10 +51,10 @@ them back to that real person.
 
 - **People:** edit [web/api/_people.py](web/api/_people.py) to change the preset contacts (what they
   call you, their habits, their voice) or the voices offered in "Add someone".
-- **A real voice:** only with that person's permission, record 10 to 30 seconds of them talking and
-  run `python tools/clone_voice.py recording.m4a --name "Mom"`. Put the printed id in their `voice`
-  in `_people.py`, or paste it into "Have a cloned voice?" in the app. Cloning needs Cartesia Pro
-  ($5/month); the free plan returns `402 Feature not available`.
+- **A real voice:** use "Use their real voice" in the app, which needs no setup. To give a *preset*
+  contact a real voice, run `python tools/clone_voice.py recording.m4a --name "Mom"` and put the
+  printed id in their `voice` in `_people.py`. Either way, only with that person's permission.
+  Cloning needs a paid Cartesia plan (Pro is $5/month); the free plan returns `402`.
 - **Reply speed:** `effort` in [web/api/talk.py](web/api/talk.py) is `medium`. It was faster than
   `high`/`xhigh` in testing with no noticeable difference in these short replies.
 
@@ -55,20 +62,27 @@ them back to that real person.
 
 - **Sonic 3.6 text-to-speech** (`/tts/bytes`, mp3, API version `2026-08-14`) for every reply, in
   each person's own voice. It was about twice as fast as Sonic 2 in our tests (0.5 to 0.75 s per line).
-- **Per-person speaking speed** (`generation_config.speed`): Grandma talks slower (0.85), Mom and
-  Dad a touch slower than normal (0.95). Emotion is left for Sonic to infer from the words, so
-  comfort sounds gentle and a joke sounds light.
-- **Voice library:** each preset and each "Add someone" option is a stock voice picked for the
-  role ("Maternal Vibe", "Matriarch", "Big Brother", ...).
-- **Instant voice cloning** ([tools/clone_voice.py](tools/clone_voice.py)) so a loved one can sound
-  like themselves, with their permission.
+- **Instant voice cloning, built into the app** (`/voices/clone`): "Use their real voice" records
+  your loved one in the browser (or takes a voice memo), converts it to 24 kHz mono WAV so any
+  phone recording works (iPhone memos are m4a, which Cartesia doesn't take directly), keeps up
+  to 60 seconds because Sonic 3.6 uses that much to hold on to their accent, and sends it through
+  [web/api/clone.py](web/api/clone.py). The new private voice is used for that person right away.
+  The **Mom** contact already speaks in a voice our team cloned for the demo, so you can hear the
+  difference a real voice makes without recording anyone.
+- **Per-person speaking speed** (`generation_config.speed`): Grandma talks slower (0.85), Dad a
+  touch slower than normal (0.95), and cloned voices keep their own pace. Emotion is left for
+  Sonic to infer from the words, so comfort sounds gentle and a joke sounds light.
+- **Voice library:** Dad, Grandma, Big Bro and every "Choose a voice" option are stock voices
+  picked for the role ("Steady Ally", "Matriarch", "Big Brother", ...).
 - Greeting audio is cached per voice, so only real replies use credits.
 
 ### Known limitations
 
 - The reply is spoken after it's fully written, so there's a 3 to 5 second pause before they answer.
 - English only. Voice input needs Chrome or Edge; other browsers can type.
-- Stock voices are stand-ins until you clone the real person's voice.
+- Dad, Grandma and Big Bro use stock voices. For a real voice, add someone with "Use their real voice".
+- Copying a voice in the app needs a paid Cartesia plan; on the free plan the page says so.
+- A copied voice is only as good as the recording: one person, a quiet room, at least 10 seconds.
 - The camera sends a still photo per message, not live video, so they react to how you look
   when you speak, not to everything in between.
 - People you add live in one browser's storage, not an account.
@@ -85,11 +99,14 @@ them back to that real person.
 - **A crisis.** The personas are told to give 988 (or 911 for immediate danger) and urge you to reach
   a real person. The 988 link is always on screen.
 - **Making things up.** The personas are told never to invent shared memories or family facts.
-- **Someone's voice used without consent.** Clone a voice only with that person's permission. The
-  recording script is read by them, so they know what it's for.
-- **Privacy.** No accounts. Our server doesn't save conversations or photos; each message goes to
-  Claude (and the reply to Cartesia) only to answer it. The camera is off by default and sends one
-  still per message. People you add stay in your browser. API keys never reach the page.
+- **Someone's voice used without consent.** "Use their real voice" won't save until you confirm
+  the person said it's okay, and the server refuses requests without that confirmation. The
+  suggested script is something they read themselves, so they know what it's for. Copied voices
+  are private to our Cartesia account.
+- **Privacy.** No accounts. Our server doesn't save conversations, photos or voice recordings;
+  each message goes to Claude (and the reply to Cartesia) only to answer it, and a recording goes
+  to Cartesia only to make the voice. The camera is off by default and sends one still per
+  message. People you add stay in your browser. API keys never reach the page.
 - **Misuse of "Add someone".** What you type about a person is treated only as a description of
   them, and replies are capped in length.
 - **Accessibility.** Everything they say also appears as text, you can type instead of talking,
