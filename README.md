@@ -2,14 +2,14 @@
 
 This repo has two parts:
 
-1. **Nearby (`web/`)**: the live demo. A web page where you call a loved one (Mom, Dad,
+1. **HearU (`web/`)**: the live demo. A web page where you call a loved one (Mom, Dad,
    Grandma, a big brother, or anyone you add) and they answer out loud in a voice like theirs.
    It's for the nights when they're far away and you can't reach them. It doesn't replace
    them: every call ends by pointing you back to the real person.
 2. **Vision backend (everything else)**: a local YOLO + motion pipeline that plays voice clips
    when a camera sees certain situations. Documented further down.
 
-## Nearby: live voice companion
+## HearU: live voice companion
 
 ```
  browser mic ──► speech-to-text (built into Chrome/Edge) ──► POST /api/talk

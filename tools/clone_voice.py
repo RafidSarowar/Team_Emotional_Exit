@@ -62,7 +62,7 @@ def multipart(fields: dict[str, str], file_field: str, file_path: Path) -> tuple
 def clone(api_key: str, clip: Path, name: str, language: str) -> dict:
     body, content_type = multipart(
         {"name": name, "language": language, "mode": "similarity", "enhance": "true",
-         "description": "Cloned with permission for the Nearby demo"},
+         "description": "Cloned with permission for the HearU demo"},
         "clip", clip,
     )
     req = urllib.request.Request(

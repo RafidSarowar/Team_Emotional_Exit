@@ -54,7 +54,7 @@ if __name__ == "__main__":
         print(f"Warning: missing in .env: {', '.join(missing)}")
     port = int(os.environ.get("PORT", 8000))
     server = ThreadingHTTPServer(("127.0.0.1", port), partial(DevHandler, directory=str(WEB / "public")))
-    print(f"Nearby running at http://localhost:{port}  (Ctrl+C to stop)")
+    print(f"HearU running at http://localhost:{port}  (Ctrl+C to stop)")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
