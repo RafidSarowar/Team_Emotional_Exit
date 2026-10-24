@@ -25,12 +25,14 @@ VOICES = [
 ]
 
 # The preset contacts. "details" go straight into the system prompt; keep them short.
+# "speed" is how fast they talk (Cartesia allows 0.6 to 1.5; people added in the app use 1.0).
 PEOPLE = {
     "mom": {
         "name": "Mom",
         "relationship": "mom",
         "calls_you": "sweetheart",
         "voice": "9329fbdb-e285-4fba-95ec-592e15f14476",
+        "speed": 0.95,
         "details": """
 - She's warm, a little playful, and gets straight to what matters.
 - She often asks whether you've eaten and reminds you to drink water.
@@ -42,6 +44,7 @@ PEOPLE = {
         "relationship": "dad",
         "calls_you": "kiddo",
         "voice": "49808e4c-998a-40a8-b2ea-8ac8e8ce779e",
+        "speed": 0.95,
         "details": """
 - He's calm and steady, the one who makes problems feel smaller.
 - He listens first, then helps you find one small next step.
@@ -54,6 +57,7 @@ PEOPLE = {
         "relationship": "grandmother",
         "calls_you": "my dear",
         "voice": "c8605446-247c-4d39-acd4-8f4c28aa363c",
+        "speed": 0.85,
         "details": """
 - She speaks slowly and softly, and nothing ever feels like an emergency to her.
 - She reminds you to eat something warm and get some sleep.
@@ -66,6 +70,7 @@ PEOPLE = {
         "relationship": "older brother",
         "calls_you": "kid",
         "voice": "17488b72-f815-44d8-bdd9-869971c3ec06",
+        "speed": 1.0,
         "details": """
 - He's casual, honest, and a little teasing, but always on your side.
 - He talks to you like an equal, never like a parent.

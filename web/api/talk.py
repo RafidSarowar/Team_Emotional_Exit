@@ -40,10 +40,11 @@ MAX_REPLY_CHARS = 600   # spoken replies are short; this caps Cartesia credits p
 MAX_IMAGE_B64 = 700_000  # camera stills are ~50 KB; this rejects anything unreasonable
 MAX_BODY = 1_000_000
 CARTESIA_URL = "https://api.cartesia.ai/tts/bytes"
-CARTESIA_VERSION = "2025-04-16"
+CARTESIA_VERSION = "2026-08-14"
+CARTESIA_MODEL = "sonic-3.6"   # about twice as fast as sonic-2 here, and supports per-request speed
 
 _client: anthropic.Anthropic | None = None
-_greeting_audio: dict[tuple[str, str], str] = {}  # (voice, text) -> base64 mp3
+_greeting_audio: dict[tuple[str, float, str], str] = {}  # (voice, speed, text) -> base64 mp3
 
 
 class BadRequest(Exception):
@@ -139,13 +140,16 @@ def ask(person: dict, history: list[dict], image: str | None = None) -> str:
     return shorten(text)
 
 
-def speak(text: str, voice: str) -> bytes:
+def speak(text: str, voice: str, speed: float = 1.0) -> bytes:
     body = {
-        "model_id": "sonic-2",
+        "model_id": CARTESIA_MODEL,
         "transcript": text,
-        "voice": {"mode": "id", "id": voice},
+        "voice": {"id": voice},
         "output_format": {"container": "mp3", "sample_rate": 44100, "bit_rate": 128000},
         "language": "en",
+        # Each person's own pace (Grandma is slower). Emotion is left for the model
+        # to infer from the words, so comfort sounds gentle and a joke sounds light.
+        "generation_config": {"speed": speed},
     }
     key = os.environ["CARTESIA_API_KEY"]
     req = urllib.request.Request(
@@ -192,11 +196,12 @@ def handle(payload: dict) -> tuple[int, dict]:
 
     try:
         # Greetings repeat on every call, so reuse their audio instead of paying for it again.
-        cache_key = (person["voice"], reply)
+        speed = person.get("speed", 1.0)
+        cache_key = (person["voice"], speed, reply)
         if payload.get("greeting") and cache_key in _greeting_audio:
             audio = _greeting_audio[cache_key]
         else:
-            audio = base64.b64encode(speak(reply, person["voice"])).decode()
+            audio = base64.b64encode(speak(reply, person["voice"], speed)).decode()
             if payload.get("greeting"):
                 _greeting_audio[cache_key] = audio
     except (urllib.error.URLError, KeyError) as e:

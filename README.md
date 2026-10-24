@@ -1,5 +1,7 @@
 # Team Emotional Exit
 
+**Live demo: https://team-emotional-exit-tau.vercel.app** (use Chrome or Edge and allow the microphone)
+
 This repo has two parts:
 
 1. **HearU (`web/`)**: the live demo. A web page where you call a loved one (Mom, Dad,
@@ -11,18 +13,23 @@ This repo has two parts:
 
 ## HearU: live voice companion
 
+**Who it's for:** students who moved far from home for college, like international students whose
+families are asleep in another time zone. At 2 AM, after a bad exam or a lonely night, the people
+they'd call can't pick up. HearU lets them hear a loved one's voice right then, and then points
+them back to that real person.
+
 ```
- browser mic ──► speech-to-text (built into Chrome/Edge) ──► POST /api/talk
+ browser mic ──► speech-to-text (built into Chrome/Edge) ──► POST /api/talk ◄── camera still (opt-in)
                                                                │
                                      Claude Opus 5.5 writes their reply (people in web/api/_people.py)
                                                                │
-                                     Cartesia sonic-2 speaks it in their voice ──► mp3 played in the page
+                                     Cartesia Sonic 3.6 speaks it in their voice, at their pace ──► mp3 played in the page
 ```
 
 - No account or install for the person using it: open the link, tap a contact, tap the mic, talk.
 - **Add someone** lets anyone create their own loved one (name, what they call you, how they
   talk, a voice). It's saved in that browser only.
-- Ending a call offers a **Text the real Mom** button with a message already written, because
+- Ending a call offers a **Text your real Mom** button with a message already written, because
   the goal is to get you back to the real person.
 - **Camera (opt-in):** turn it on during a call, like switching to video. Each time you talk, one
   small still photo goes to Claude with your words, so they can notice if you look exhausted or
@@ -46,7 +53,11 @@ This repo has two parts:
 
 ### Cartesia features used
 
-- **Sonic-2 text-to-speech** (`/tts/bytes`, mp3) for every reply, in each person's own voice.
+- **Sonic 3.6 text-to-speech** (`/tts/bytes`, mp3, API version `2026-08-14`) for every reply, in
+  each person's own voice. It was about twice as fast as Sonic 2 in our tests (0.5 to 0.75 s per line).
+- **Per-person speaking speed** (`generation_config.speed`): Grandma talks slower (0.85), Mom and
+  Dad a touch slower than normal (0.95). Emotion is left for Sonic to infer from the words, so
+  comfort sounds gentle and a joke sounds light.
 - **Voice library:** each preset and each "Add someone" option is a stock voice picked for the
   role ("Maternal Vibe", "Matriarch", "Big Brother", ...).
 - **Instant voice cloning** ([tools/clone_voice.py](tools/clone_voice.py)) so a loved one can sound
@@ -55,7 +66,7 @@ This repo has two parts:
 
 ### Known limitations
 
-- The reply is spoken after it's fully written, so there's a 4 to 6 second pause before they answer.
+- The reply is spoken after it's fully written, so there's a 3 to 5 second pause before they answer.
 - English only. Voice input needs Chrome or Edge; other browsers can type.
 - Stock voices are stand-ins until you clone the real person's voice.
 - The camera sends a still photo per message, not live video, so they react to how you look
@@ -63,6 +74,26 @@ This repo has two parts:
 - People you add live in one browser's storage, not an account.
 - The free Cartesia plan covers about 20,000 spoken characters a month (roughly 100 replies).
 - It's a comfort companion, not a therapist or a crisis service. It points to 988 when needed.
+
+### Where it could go wrong, and what we built for it
+
+- **Leaning on the AI instead of the real person.** Every call ends with "Text your real Mom" and a
+  message ready to send, the personas nudge you to reach out, and the footer says it's not a
+  replacement.
+- **Believing it's really them.** If you sincerely ask, it says it's an AI speaking in their voice,
+  and that the real person would love to hear from you.
+- **A crisis.** The personas are told to give 988 (or 911 for immediate danger) and urge you to reach
+  a real person. The 988 link is always on screen.
+- **Making things up.** The personas are told never to invent shared memories or family facts.
+- **Someone's voice used without consent.** Clone a voice only with that person's permission. The
+  recording script is read by them, so they know what it's for.
+- **Privacy.** No accounts. Our server doesn't save conversations or photos; each message goes to
+  Claude (and the reply to Cartesia) only to answer it. The camera is off by default and sends one
+  still per message. People you add stay in your browser. API keys never reach the page.
+- **Misuse of "Add someone".** What you type about a person is treated only as a description of
+  them, and replies are capped in length.
+- **Accessibility.** Everything they say also appears as text, you can type instead of talking,
+  tap targets are large, and animations stop for people who turn on reduced motion.
 
 ### Run locally
 
