@@ -1,0 +1,18 @@
+# Secrets — never commit API keys
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# YOLO weights are downloaded automatically on first run
+*.pt
+
+# Runtime output written by the backend
+runtime/
+
+# Extracted voice packs are regenerated from the zips
+voice_packs/.extracted/

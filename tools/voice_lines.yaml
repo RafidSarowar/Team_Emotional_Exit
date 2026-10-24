@@ -1,0 +1,11 @@
+# Lines rendered by tools/make_cartesia_pack.py, one folder per scenario audio key.
+# Several lines per scenario = variety; the backend rotates through them.
+approaching:
+  - "Hey there! Come on over, I've been waiting for you."
+  - "Oh, hello! Nice to see you moving my way."
+lingering:
+  - "Still here? Take your time, there's no rush."
+  - "You've been standing there a while. Anything I can help with?"
+unattended_motion:
+  - "Hmm, something just moved, but I don't see anyone."
+  - "Is someone there? I noticed some movement."

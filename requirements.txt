@@ -1,0 +1,12 @@
+opencv-python>=4.8
+numpy>=1.24
+pyyaml>=6.0
+ultralytics>=8.1
+pygame>=2.5
+
+# Optional fallback audio backend (used only if pygame is unavailable)
+# sounddevice>=0.4
+# soundfile>=0.12
+
+# Tests
+pytest>=7.0

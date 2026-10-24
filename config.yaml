@@ -1,0 +1,89 @@
+# ---------------------------------------------------------------------------
+# Emotional Exit: vision backend configuration
+# ---------------------------------------------------------------------------
+
+video:
+  source: 0              # webcam index (0, 1, ...) or a path/URL to a video file
+  width: 1280            # requested capture size; the camera may ignore it
+  height: 720
+  show_window: true      # draw boxes + HUD in an OpenCV window (press q to quit)
+  loop_file: false       # restart a video file when it ends (handy for demos)
+
+yolo:
+  model: yolov8n.pt      # any Ultralytics model; downloaded automatically on first run
+  confidence: 0.45
+  device: null           # null = auto, "cpu", "cuda:0", "mps"
+  imgsz: 640
+  # Only these COCO classes are kept. An empty list keeps all 80 classes.
+  classes: [person, cell phone, backpack, handbag, suitcase, laptop, bottle, cup]
+
+motion:
+  method: hybrid         # mog2 | diff | hybrid (hybrid = MOG2 AND frame difference)
+  process_width: 320     # motion runs on a downscaled frame for speed
+  mog2_history: 300
+  mog2_var_threshold: 25
+  diff_threshold: 25     # pixel intensity delta for frame differencing
+  min_blob_area: 150     # px² at process_width; smaller blobs count as noise
+  warmup_frames: 30      # ignore motion while the background model settles
+
+# How long the engine keeps a scenario active after its conditions stop matching.
+engine:
+  release_seconds: 1.5
+
+# ---------------------------------------------------------------------------
+# The 3 scenarios. They are evaluated in priority order (lowest number first);
+# the first one whose conditions hold continuously for `hold_seconds` becomes
+# active. These defaults are placeholders, so rename and retune them for your use case.
+#
+# Condition keys (all optional, all must pass):
+#   require_any:   at least one of these classes is visible
+#   require_all:   every one of these classes is visible
+#   forbid_any:    none of these classes may be visible
+#   min_count:     at least N detections of the require_* classes
+#   motion_scope:  global (whole frame) | target (inside boxes of require_* classes)
+#   motion_min / motion_max:  motion ratio bounds, 0.0–1.0 share of moving pixels
+#
+# `audio` is the folder name inside the voice pack that holds this scenario's clips.
+# ---------------------------------------------------------------------------
+scenarios:
+  - id: approaching
+    description: A person is in view and actively moving.
+    priority: 1
+    require_any: [person]
+    motion_scope: target
+    motion_min: 0.08
+    hold_seconds: 0.5
+    cooldown_seconds: 12
+    audio: approaching
+
+  - id: lingering
+    description: A person is in view but has been mostly still for a while.
+    priority: 2
+    require_any: [person]
+    motion_scope: target
+    motion_max: 0.03
+    hold_seconds: 4.0
+    cooldown_seconds: 20
+    audio: lingering
+
+  - id: unattended_motion
+    description: Something is moving but no person is visible.
+    priority: 3
+    forbid_any: [person]
+    motion_scope: global
+    motion_min: 0.02
+    hold_seconds: 1.0
+    cooldown_seconds: 15
+    audio: unattended_motion
+
+audio:
+  enabled: true          # false = only log state; the Cartesia agent handles playback
+  backend: auto          # auto | pygame | sounddevice | none
+  voice_packs_dir: voice_packs
+  rescan_seconds: 5      # how often to look for new or updated packs
+  selection: round_robin # round_robin | random | first (when a scenario has multiple clips)
+  interrupt: false       # true = a new trigger cuts off a clip that is still playing
+
+state:
+  dir: runtime           # state.json + events.jsonl are written here
+  heartbeat_seconds: 0.5 # how often state.json is refreshed
