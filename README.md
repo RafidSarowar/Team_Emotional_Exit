@@ -9,7 +9,7 @@
 
 | Call someone you miss | They answer in their voice | Or copy their real voice | Then text the real one |
 | --- | --- | --- | --- |
-| <img src="docs/screenshots/01-contacts.png" width="190" alt="HearU contacts: Mom, Dad, Grandma, Big Bro"> | <img src="docs/screenshots/05-conversation.png" width="190" alt="A call with Mom at 2:31 AM"> | <img src="docs/screenshots/07-real-voice.png" width="190" alt="Recording a loved one's real voice, with consent"> | <img src="docs/screenshots/06-call-ended.png" width="190" alt="Call ended, with a Text your real Mom button"> |
+| <img src="docs/screenshots/01-contacts.png" width="190" alt="HearU contacts: Mom, Dad, Grandma, Big Bro"> | <img src="docs/screenshots/05-conversation.png" width="190" alt="A call with Mom at 2:44 AM"> | <img src="docs/screenshots/07-real-voice.png" width="190" alt="Recording a loved one's real voice, with consent"> | <img src="docs/screenshots/06-call-ended.png" width="190" alt="Call ended, with a Text your real Mom button"> |
 
 Built at Cal Hacks 13.0. **Claude** writes what they'd say; **Cartesia** says it in their voice.
 
@@ -29,7 +29,8 @@ them when you can. It's built to bring people closer, not to replace them.
 ## Try it in 60 seconds
 
 1. Open the [live demo](https://team-emotional-exit-tau.vercel.app) in Chrome and allow the microphone.
-2. Tap **Mom**. She answers in a voice our team cloned with Cartesia.
+2. Tap **Mom**. She answers in a voice our team cloned with Cartesia, and she knows your local time:
+   call late at night and she'll notice you're still up.
 3. Tap the mic and say something real, like "I bombed my midterm and I can't sleep." Or tap **Type**.
 4. Optional: tap **Turn on camera**, and she can see how you look when you talk.
 5. Ask "Are you really my mom?" and hear the honest answer.
@@ -45,6 +46,8 @@ them when you can. It's built to bring people closer, not to replace them.
   said it's okay, and HearU copies their voice with Cartesia.
 - **A real call.** Tap the mic and talk; they answer out loud, with the words on screen, a call
   timer and your local time. Type instead when you can't talk out loud.
+- **Knows what time it is.** At 2 AM they pick up with "It's so late. What's keeping you up?" and
+  nudge you toward sleep; in the morning it's "Good morning".
 - **Camera, if you want.** Like switching to video: one still photo goes with each message, so they
   can notice how you look. Off by default, never stored.
 - **Back to the real person.** Every call ends with their last words and a text ready to send:
@@ -94,6 +97,10 @@ API keys live only in Vercel's environment variables.
 - **Vision, gently.** With the camera on, your newest message carries one JPEG still. The persona
   reacts the way they would ("you're still at that desk in the dark") without describing the photo
   or commenting on how you look.
+- **Knows your local time.** The browser sends only its UTC offset (a number); the server works out
+  the time from its own clock and adds it to the persona, so no user text reaches the prompt this
+  way. At 2:44 AM, Mom said: "no wonder it's keeping you up at almost three in the morning… Will you
+  get a glass of water and tell me what happened, and then we'll see about getting you to bed?"
 - **Tuned for a phone call.** Claude Opus 5.5 at medium effort: replies took 2.8 to 4.4 seconds in
   our tests, against 4.6 to 7.1 at xhigh, and sounded just as warm. Replies are 1 to 3 spoken
   sentences, and the server caps their length.
