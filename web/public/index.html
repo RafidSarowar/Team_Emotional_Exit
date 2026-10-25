@@ -83,6 +83,7 @@
   .who .tag { color: var(--warm); }
   .phone { flex: none; width: 22px; height: 22px; color: var(--warm); }
   button.remove { background: none; color: var(--muted); padding: 8px; font-size: 0.8rem; font-weight: 400; }
+  .empty { text-align: center; color: var(--muted); margin: 28px 0 8px; }
 
   /* add someone */
   form.person { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
@@ -261,8 +262,10 @@
       <p class="tagline">For the nights the people you love feel far away.</p>
     </header>
     <ul id="contactList" class="contacts"></ul>
+    <p id="noContacts" class="empty hidden">No one here yet. Add someone you miss.</p>
     <p id="contactsError" class="status"></p>
     <button id="addBtn" class="secondary">+ Add someone</button>
+    <button id="restoreBtn" class="secondary hidden"></button>
   </section>
 
   <section id="add" class="screen hidden">
@@ -427,6 +430,14 @@ function loadCustom() {
 function saveCustom(list) {
   try { localStorage.setItem(STORE, JSON.stringify(list)); } catch {}
 }
+
+// Default contacts you removed. They're only hidden in this browser, so they can come back.
+const HIDDEN = "nearby.hiddenPresets";
+let hidden = (() => { try { return JSON.parse(localStorage.getItem(HIDDEN)) || []; } catch { return []; } })();
+function setHidden(ids) {
+  hidden = ids;
+  try { localStorage.setItem(HIDDEN, JSON.stringify(ids)); } catch {}
+}
 function getPasscode() {
   try { return localStorage.getItem("passcode") || ""; } catch { return ""; }
 }
@@ -482,11 +493,21 @@ function contactItem(p, onCall, onRemove) {
   return li;
 }
 
+// "Mom", "Mom and Dad", "Mom, Dad and Grandma"
+function joinNames(people) {
+  const names = people.map((p) => p.name);
+  return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
 function renderContacts() {
   const list = $("contactList");
   list.textContent = "";
   for (const p of presets) {
-    list.append(contactItem(p, () => startCall(p.name, { person: p.id })));
+    if (hidden.includes(p.id)) continue;
+    list.append(contactItem(p, () => startCall(p.name, { person: p.id }), () => {
+      setHidden([...hidden, p.id]);
+      renderContacts();
+    }));
   }
   for (const p of loadCustom()) {
     list.append(contactItem(p, () => startCall(p.name, { custom: p }), () => {
@@ -494,6 +515,10 @@ function renderContacts() {
       renderContacts();
     }));
   }
+  const removed = presets.filter((p) => hidden.includes(p.id));
+  $("restoreBtn").textContent = `Bring back ${joinNames(removed)}`;
+  $("restoreBtn").classList.toggle("hidden", !removed.length);
+  $("noContacts").classList.toggle("hidden", list.children.length > 0 || !!$("contactsError").textContent);
 }
 
 async function loadPeople() {
@@ -652,6 +677,7 @@ function resetAddForm() {
 }
 
 $("addBtn").addEventListener("click", () => { resetAddForm(); show("add"); addForm.elements.name.focus(); });
+$("restoreBtn").addEventListener("click", () => { setHidden([]); renderContacts(); });
 $("cancelAdd").addEventListener("click", () => { resetAddForm(); show("contacts"); });
 
 addForm.addEventListener("submit", async (e) => {

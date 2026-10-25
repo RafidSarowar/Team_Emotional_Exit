@@ -40,7 +40,8 @@ them when you can. It's built to bring people closer, not to replace them.
 ## What it does
 
 - **Loved ones, ready to call.** Mom, Dad, Grandma and Big Bro, each with their own voice, speaking
-  pace and way of talking.
+  pace and way of talking. Remove any of them, or anyone you add; a removed default comes back
+  with one tap.
 - **Add someone.** Their name, what they call you, how they talk, and a voice. Saved in your browser only.
 - **Use their real voice.** Record them for 20 to 60 seconds or upload a voice memo, confirm they
   said it's okay, and HearU copies their voice with Cartesia.
@@ -158,7 +159,7 @@ API keys live only in Vercel's environment variables.
 - A copied voice is only as good as the recording: one person, a quiet room, at least 10 seconds.
 - The camera sends a still photo per message, not live video, so they react to how you look
   when you speak, not to everything in between.
-- People you add live in one browser's storage, not an account.
+- People you add, and defaults you remove, are saved in one browser, not an account.
 - The free Cartesia plan covers about 20,000 spoken characters a month (roughly 100 replies).
 - It's a comfort companion, not a therapist or a crisis service. It points to 988 when needed.
 
