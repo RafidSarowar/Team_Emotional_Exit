@@ -55,6 +55,10 @@
   }
   .screen { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   #contacts, #add { overflow-y: auto; }
+  /* Scrolling areas reach into the page's 16px side margin, so the scrollbar sits there
+     instead of on top of the Remove buttons and your chat bubbles at the right edge. */
+  #contacts, #add, #ended { margin-right: -16px; padding-right: 16px; }
+  #contacts, #add, #ended, .chat { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.22) transparent; }
   header { text-align: center; }
   h1, h2, .serif { font-family: Fraunces, Georgia, serif; font-weight: 600; }
   h1, h2 { margin: 8px 0 4px; }
@@ -177,7 +181,7 @@
   .chat {
     flex: 1; overflow-y: auto; min-height: 0;
     display: flex; flex-direction: column; gap: 10px;
-    padding: 12px 2px 12px;
+    margin-right: -16px; padding: 12px 18px 12px 2px;
     /* soften the edge where older messages scroll away */
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
     mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
